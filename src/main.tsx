@@ -1,12 +1,12 @@
 import {Devvit} from '@devvit/public-api'
-import {App} from './app/app.tsx'
-import {Preview} from './app/preview.tsx'
+import {App} from './app/app.js'
+import {Preview} from './app/preview.js'
 
 Devvit.configure({redditAPI: true})
 
 Devvit.addCustomPostType({
   name: 'Reddit vs Zombies',
-  height: 'regular',
+  height: 'tall',
   render: App
 })
 
@@ -17,7 +17,7 @@ Devvit.addMenuItem({
     const sub = await ctx.reddit.getCurrentSubreddit()
 
     const post = await ctx.reddit.submitPost({
-      preview: Preview(),
+      preview: <Preview />,
       title: 'Reddit vs Zombies',
       subredditName: sub.name
     })
