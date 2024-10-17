@@ -8,7 +8,7 @@
     },
     "linter": { "enabled": true }
   },
-  "files": { "ignore": ["webroot"] },
+  "files": { "ignore": ["webroot/index.js"] },
   "formatter": { "indentStyle": "space" },
   "javascript": {
     "formatter": {

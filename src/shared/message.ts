@@ -1,16 +1,16 @@
-export type AppMessage = {type: 'Update'; lastUpdate: number} | {type: 'Pong'}
+import type {XY} from './xy.js'
 
-export type WebViewMessage = PingMessage
-export type PingMessage = {type: 'Ping'}
+/** a window message from the app to the web view. */
+export type AppMessage =
+  | {type: 'Update'; lastUpdate: number}
+  | {type: 'Pong'}
+  | {type: 'Connected'}
+  | PeerMessage
 
-declare global {
-  interface Window {
-    postMessage<T extends WebViewMessage>(msg: T, targetOrigin: string): void
-  }
+/** a realtime message from another instance. */
+export type PeerMessage = {peer: true; type: 'NewPlayer'; xy: XY}
 
-  interface WindowEventMap {
-    message: MessageEvent<
-      {type: 'stateUpdate'; data: AppMessage} | {type: undefined}
-    >
-  }
-}
+/** a window message from the web view to the app. */
+export type WebViewMessage =
+  | ({peer?: boolean} & ({type: 'Ping'} | {type: 'Loaded'}))
+  | PeerMessage

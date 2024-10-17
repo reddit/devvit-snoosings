@@ -2,7 +2,7 @@ import {Devvit} from '@devvit/public-api'
 import {App} from './app/app.js'
 import {Preview} from './app/preview.js'
 
-Devvit.configure({redditAPI: true})
+Devvit.configure({realtime: true, redditAPI: true})
 
 Devvit.addCustomPostType({
   name: 'Reddit vs Zombies',

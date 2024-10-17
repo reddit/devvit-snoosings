@@ -3,7 +3,29 @@
   <head>
     <meta charset="utf-8" />
     <title>Reddit vs Zombies</title>
-    <link rel="stylesheet" href="index.css" />
+    <style>
+      body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  background: pink;
+} 
+ 
+#stateOutput {
+  border: 1px solid black;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+pre {
+  padding: 4px;
+}
+    </style>
   </head>
   <body>
     <button>Ping</button>
