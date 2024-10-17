@@ -1,16 +1,16 @@
-export type WebViewState = {lastUpdate: number}
+export type AppMessage = {type: 'Update'; lastUpdate: number} | {type: 'Pong'}
 
-export type Message = PingMessage
+export type WebViewMessage = PingMessage
 export type PingMessage = {type: 'Ping'}
 
 declare global {
   interface Window {
-    postMessage<T extends Message>(msg: T, targetOrigin: string): void
+    postMessage<T extends WebViewMessage>(msg: T, targetOrigin: string): void
   }
 
   interface WindowEventMap {
     message: MessageEvent<
-      {type: 'stateUpdate'; data: WebViewState} | {type: undefined}
+      {type: 'stateUpdate'; data: AppMessage} | {type: undefined}
     >
   }
 }

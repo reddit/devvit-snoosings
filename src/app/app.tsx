@@ -1,17 +1,18 @@
 // biome-ignore lint/style/useImportType: Devvit is a functional dependency of JSX.
 import {Devvit} from '@devvit/public-api'
 import {type JSONObject, useState} from '@devvit/public-api'
-import type {Message, WebViewState} from '../shared/message.js'
+import type {AppMessage, WebViewMessage} from '../shared/message.js'
 
 export function App(_ctx: Devvit.Context): JSX.Element {
-  const [webView, setWebView] = useState<Readonly<WebViewState>>({
-    lastUpdate: 0
+  const [webView, setWebView] = useState<Readonly<AppMessage>>({
+    type: 'Update',
+    lastUpdate: Date.now()
   })
 
-  function onMessage(msg: Message): void {
+  function onMessage(msg: WebViewMessage): void {
     console.log(`app.onMessage=${JSON.stringify(msg, undefined, 2)}`)
     if (msg.type === 'Ping')
-      setWebView(prev => ({...prev, lastUpdate: Date.now()}))
+      setWebView({type: 'Update', lastUpdate: Date.now()})
   }
 
   return (
