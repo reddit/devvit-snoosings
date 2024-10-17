@@ -35,13 +35,13 @@ export function App(ctx: Devvit.Context): JSX.Element {
     onSubscribed() {
       if (!connected) {
         setConnected(true)
-        postAppMessage({type: 'LocalPlayerConnected'})
+        postAppMessage({type: 'PlayerOneConnected'})
       }
     },
     onUnsubscribed() {
       if (connected) {
         setConnected(false)
-        postAppMessage({type: 'LocalPlayerDisconnected'})
+        postAppMessage({type: 'PlayerOneDisconnected'})
       }
     }
   })

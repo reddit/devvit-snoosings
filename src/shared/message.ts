@@ -10,8 +10,8 @@ export type AppMessage = {
 } & NoIDAppMessage
 
 export type NoIDAppMessage =
-  | {type: 'LocalPlayerConnected'}
-  | {type: 'LocalPlayerDisconnected'}
+  | {type: 'PlayerOneConnected'}
+  | {type: 'PlayerOneDisconnected'}
   /**
    * hack: the web view iframe is loaded immediately but the local runtime is
    * slow. wait until the local runtime is loaded before attempting any state
@@ -28,7 +28,7 @@ export type NoIDAppMessage =
 export type PeerMessage = {
   peer: true
   player: Player
-} & {type: 'RemotePlayerConnected'}
+} & {type: 'RemotePlayerHeartbeat'}
 
 /** a window message from the web view to the app. */
 export type WebViewMessage = {type: 'WebViewLoaded'} | PeerMessage

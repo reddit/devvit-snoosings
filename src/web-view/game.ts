@@ -9,9 +9,10 @@ const worldWH = {w: 1024, h: 1024}
 export class Game {
   #debug: boolean = false
   /** connected players. */
-  #players: {[uuid: string]: Player} = {}
-  #player: Player = {
+  #players: {[uuid: string]: Player & {heartbeat: number}} = {}
+  #playerOne: Player & {heartbeat: number} = {
     dir: {x: 0, y: 0},
+    heartbeat: 0,
     name: anonUsername,
     t2: anonT2,
     xy: {x: Math.random() * worldWH.w, y: Math.random() * worldWH.h},
@@ -24,6 +25,26 @@ export class Game {
     console.log(`Reddit vs Zombies ${pkg.version}`)
     this.#output = document.querySelector<HTMLPreElement>('#stateOutput')!
     addEventListener('message', this.#onMessage)
+    requestAnimationFrame(now => this.#onFrame(now, performance.now()))
+  }
+
+  #onFrame = (now: number, then: number) => {
+    if (now - this.#playerOne.heartbeat > 1_000) {
+      this.#playerOne.heartbeat = now
+      postMessage({
+        type: 'RemotePlayerHeartbeat',
+        peer: true,
+        player: this.#playerOne // to-do: strip heartbeat.
+      })
+    }
+    for (const player of Object.values(this.#players))
+      if (
+        now - player.heartbeat > 5_000 &&
+        player.uuid !== this.#playerOne.uuid
+      )
+        this.#playerDisconnected(player)
+    this.#render()
+    requestAnimationFrame(then => this.#onFrame(then, now))
   }
 
   #onMessage = (
@@ -44,40 +65,38 @@ export class Game {
     // if (this.#debug) console.log(`Game.onMessage=${JSON.stringify(msg)}`)
 
     switch (msg.type) {
-      case 'LocalPlayerConnected':
-        this.#players[this.#player.uuid] = this.#player
-        postMessage({
-          peer: true,
-          type: 'RemotePlayerConnected',
-          player: {
-            dir: this.#player.dir,
-            xy: this.#player.xy,
-            name: this.#player.name,
-            t2: this.#player.t2,
-            uuid: this.#player.uuid
-          }
-        })
+      case 'PlayerOneConnected':
+        this.#players[this.#playerOne.uuid] = {
+          ...this.#playerOne,
+          heartbeat: performance.now()
+        }
         break
 
-      case 'LocalPlayerDisconnected':
-        delete this.#players[this.#player.uuid]
+      case 'PlayerOneDisconnected':
+        delete this.#players[this.#playerOne.uuid]
         break
 
       case 'LocalRuntimeLoaded':
         this.#debug = msg.debug
-        this.#player.t2 = msg.player.t2
-        this.#player.name = msg.player.name
+        this.#playerOne.t2 = msg.player.t2
+        this.#playerOne.name = msg.player.name
         postMessage({type: 'WebViewLoaded'})
         break
 
-      case 'RemotePlayerConnected':
-        this.#players[msg.player.uuid] = msg.player
+      case 'RemotePlayerHeartbeat':
+        this.#players[msg.player.uuid] = {
+          ...msg.player,
+          heartbeat: performance.now()
+        }
         break
 
       default:
         msg satisfies never
     }
-    this.#render()
+  }
+
+  #playerDisconnected(player: Player): void {
+    delete this.#players[player.uuid]
   }
 
   #render(): void {
