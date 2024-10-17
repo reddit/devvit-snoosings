@@ -1,4 +1,4 @@
-// TypeScript config for all non-webview code.
+// TypeScript config for all web view code.
 {
   "extends": "../../tools/tsconfig-base.json",
   "compilerOptions": {
@@ -6,10 +6,10 @@
 
     "outDir": "../../dist",
 
-    "tsBuildInfoFile": "../../dist/webview/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "../../dist/web-view/tsconfig.tsbuildinfo"
   },
   // https://github.com/Microsoft/TypeScript/issues/25636
-  "include": ["**/*", "**/*.json"],
+  "include": ["**/*", "**/*.json", "../shared/2d.ts"],
   "exclude": ["**/*.test.ts"],
   "references": [{ "path": "../shared" }]
 }

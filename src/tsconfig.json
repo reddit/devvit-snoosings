@@ -9,7 +9,7 @@
     "tsBuildInfoFile": "../dist/tsconfig.tsbuildinfo"
   },
   // https://github.com/Microsoft/TypeScript/issues/25636
-  "include": ["**/*", "**/*.json"],
-  "exclude": ["**/*.test.ts", "shared", "web-view"],
+  "include": ["app/**/*", "app/**/*.json", "main.tsx"],
+  "exclude": ["**/*.test.ts"],
   "references": [{ "path": "shared" }]
 }

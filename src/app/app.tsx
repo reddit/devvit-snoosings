@@ -3,49 +3,60 @@ import {Devvit} from '@devvit/public-api'
 import {type JSONObject, useChannel, useState} from '@devvit/public-api'
 import type {
   AppMessage,
+  NoIDAppMessage,
   PeerMessage,
   WebViewMessage
 } from '../shared/message.js'
+import {anonT2, anonUsername} from '../shared/user.js'
 
-declare global {
-  interface WindowEventMap {
-    message: MessageEvent<
-      {type: 'stateUpdate'; data: AppMessage} | {type: undefined}
-    >
-  }
-}
-
-export function App(_ctx: Devvit.Context): JSX.Element {
-  const [msg, postMessage] = useState<Readonly<AppMessage>>({
-    lastUpdate: Date.now(),
-    type: 'Update'
+export function App(ctx: Devvit.Context): JSX.Element {
+  const debug = 'rvz' in ctx.debug
+  // hack: filter out duplicate connected events.
+  const [connected, setConnected] = useState(false)
+  const [playerName] = useState(async () => {
+    const player = await ctx.reddit.getCurrentUser()
+    return player?.username ?? anonUsername
   })
+
+  const [msg, postMessage] = useState<Readonly<AppMessage>>({
+    debug,
+    id: 0,
+    player: {t2: ctx.userId ?? anonT2, name: playerName},
+    type: 'LocalRuntimeLoaded'
+  })
+
+  function postAppMessage(msg: Readonly<NoIDAppMessage>): void {
+    postMessage(prev => ({...msg, id: prev.id + 1}))
+  }
 
   const chan = useChannel<PeerMessage>({
     name: 'channel',
-    onMessage: postMessage,
+    onMessage: msg => postAppMessage({msg, type: 'Peer'}),
     onSubscribed() {
-      postMessage({type: 'Connected'})
+      if (!connected) {
+        setConnected(true)
+        postAppMessage({type: 'LocalPlayerConnected'})
+      }
+    },
+    onUnsubscribed() {
+      if (connected) {
+        setConnected(false)
+        postAppMessage({type: 'LocalPlayerDisconnected'})
+      }
     }
   })
 
   function onMessage(msg: WebViewMessage): void {
-    console.log(`App.onMessage=${JSON.stringify(msg, undefined, 2)}`)
-
-    if (isPeerMessage(msg)) {
-      chan.send(msg)
-      return
-    }
+    // if (debug) console.log(`App.onMessage=${JSON.stringify(msg)}`)
 
     switch (msg.type) {
-      case 'Loaded':
+      case 'WebViewLoaded':
         chan.subscribe()
         break
-      case 'Ping':
-        postMessage({type: 'Update', lastUpdate: Date.now()})
-        break
+
       default:
-        msg satisfies never
+        msg.peer satisfies true
+        chan.send(msg)
     }
   }
 
@@ -57,8 +68,4 @@ export function App(_ctx: Devvit.Context): JSX.Element {
       url='index.html'
     />
   )
-}
-
-function isPeerMessage(msg: WebViewMessage): msg is PeerMessage {
-  return !!msg.peer
 }

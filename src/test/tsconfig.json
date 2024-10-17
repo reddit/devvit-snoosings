@@ -11,5 +11,9 @@
     "tsBuildInfoFile": "../../dist/test/tsconfig.tsbuildinfo"
   },
   "include": ["**/*", "../**/*.test.ts"],
-  "references": [{ "path": ".." }, { "path": "../web-view" }]
+  "references": [
+    { "path": ".." },
+    { "path": "../shared" },
+    { "path": "../web-view" }
+  ]
 }
