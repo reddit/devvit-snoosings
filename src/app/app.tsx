@@ -11,8 +11,6 @@ import {anonT2, anonUsername} from '../shared/user.js'
 
 export function App(ctx: Devvit.Context): JSX.Element {
   const debug = 'rvz' in ctx.debug
-  // hack: filter out duplicate connected events.
-  const [connected, setConnected] = useState(false)
   const [playerName] = useState(async () => {
     const player = await ctx.reddit.getCurrentUser()
     return player?.username ?? anonUsername
@@ -33,16 +31,10 @@ export function App(ctx: Devvit.Context): JSX.Element {
     name: 'channel',
     onMessage: msg => postAppMessage({msg, type: 'Peer'}),
     onSubscribed() {
-      if (!connected) {
-        setConnected(true)
-        postAppMessage({type: 'PlayerOneConnected'})
-      }
+      postAppMessage({type: 'PlayerOneConnected'})
     },
     onUnsubscribed() {
-      if (connected) {
-        setConnected(false)
-        postAppMessage({type: 'PlayerOneDisconnected'})
-      }
+      postAppMessage({type: 'PlayerOneDisconnected'})
     }
   })
 
