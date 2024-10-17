@@ -1,4 +1,4 @@
-import { Devvit } from '@devvit/public-api'
+import {Devvit} from '@devvit/public-api'
 
 export function Preview(): JSX.Element {
   return (
@@ -12,7 +12,9 @@ export function Preview(): JSX.Element {
         imageWidth={'240px'}
       />
       <spacer size='small' />
-      <text size='large' weight='bold'>Reddit vs Zombies</text>
+      <text size='large' weight='bold'>
+        Reddit vs Zombies
+      </text>
     </vstack>
   )
 }

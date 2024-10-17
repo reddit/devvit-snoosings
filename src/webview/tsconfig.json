@@ -1,0 +1,14 @@
+// TypeScript config for all non-webview code.
+{
+  "extends": "../../tools/tsconfig-base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "ES2020"],
+
+    "outDir": "../../dist",
+
+    "tsBuildInfoFile": "../../dist/webview/tsconfig.tsbuildinfo"
+  },
+  // https://github.com/Microsoft/TypeScript/issues/25636
+  "include": ["**/*", "**/*.json"],
+  "exclude": ["**/*.test.ts"]
+}

@@ -1,5 +1,35 @@
 {
+  "author": "Stephen Niedzielski <stephen@oidoid.com> (https://oidoid.com)",
+  "description": "snntest20241016a.",
   "dependencies": {
     "@devvit/public-api": "0.11.0"
-  }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.3",
+    "devvit": "0.11.0",
+    "esbuild": "0.24.0",
+    "typescript": "5.7.0-beta",
+    "vitest": "2.1.2"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "license": "BSD-3-Clause",
+  "name": "snntest20241016a",
+  "scripts": {
+    "build:web": "esbuild --bundle --format=esm --log-level=warning --outfile=webroot/index.js src/webview/webview.ts",
+    "clean": "rm -rf dist webroot/index.js",
+    "format": "npm run formatter -- --fix",
+    "formatter": "biome check --error-on-warnings",
+    "preversion": "[ -z \"$(git status -z)\" ]",
+    "prepublishOnly": "! git symbolic-ref --quiet HEAD || git push --follow-tags origin \"$(git branch --show-current)\"",
+    "start": "trap 'kill 0' exit; npm run build:web -- --watch=forever& devvit playtest --connect redditvszombies& wait",
+    "test": "npm run test:format && npm run test:types && npm run test:unit",
+    "test:format": "npm run formatter",
+    "test:types": "tsc --build",
+    "test:unit": "vitest run",
+    "version": "npm test"
+  },
+  "type": "module",
+  "version": "0.0.0"
 }

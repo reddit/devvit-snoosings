@@ -1,22 +1,28 @@
-import { Devvit } from '@devvit/public-api'
+// biome-ignore lint/style/useImportType: Devvit is a functional dependency of JSX.
+import {Devvit, type JSONObject, useState} from '@devvit/public-api'
 
-export function App(ctx: Devvit.Context): JSX.Element {
+type Message = {
+  type: 'ping'
+}
+
+export function App(_ctx: Devvit.Context): JSX.Element {
+  const [webView, setWebView] = useState({
+    lastUpdate: 0
+  })
+
+  const onMessage = (msg: Message): void => {
+    if (msg.type === 'ping') {
+      const newState = {...webView, lastUpdate: Date.now()}
+      setWebView(newState)
+    }
+  }
+
   return (
-    <vstack
-      alignment='middle'
-      cornerRadius='medium'
-      gap='medium'
-      padding='medium'
-    >
-      <text size='xxlarge' style='heading'>
-        Hello, world! 👋
-      </text>
-      <button
-        appearance='primary'
-        onPress={() => ctx.ui.showToast('Thank you!')}
-      >
-        Click me!
-      </button>
-    </vstack>
+    <webview
+      url='index.html'
+      state={webView}
+      onMessage={onMessage as (msg: JSONObject) => void}
+      grow
+    />
   )
 }
