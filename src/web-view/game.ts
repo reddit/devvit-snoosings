@@ -7,6 +7,7 @@ import type {
 import type {Player} from '../shared/player.js'
 import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
+import {Audio, play} from './audio.js'
 import {Cam} from './cam.js'
 import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
@@ -26,10 +27,12 @@ export class Game {
     console.log('snoosings')
     // don't bother running if the base assets cannot load.
     const assets = await Assets()
-    return new Game(assets)
+    const audio = await Audio(assets)
+    return new Game(assets, audio)
   }
 
   #assets: Assets
+  #audio: Audio
   #cam: Cam
   #ctrl: Input<Button>
   #debug: boolean = false
@@ -40,8 +43,9 @@ export class Game {
   /** connected peers and possibly p1. */
   #players: {[uuid: UUID]: Peer} = {}
 
-  private constructor(assets: Assets) {
+  private constructor(assets: Assets, audio: Audio) {
     this.#assets = assets
+    this.#audio = audio
     this.#p1 = P1(assets, lvlWH)
 
     const canvas = Canvas()
@@ -61,7 +65,9 @@ export class Game {
     this.#looper.loop = this.#onLoop
   }
 
-  #onLoop = (): void => {
+  #onLoop = async (): Promise<void> => {
+    if (this.#ctrl.isOffStart('A') && this.#audio.ctx.state !== 'running')
+      await this.#audio.ctx.resume()
     this.#update()
 
     const now = this.#looper.time ?? performance.now()
@@ -143,18 +149,25 @@ export class Game {
     ctx.draw.save()
     ctx.draw.translate(-this.#cam.x, -this.#cam.y)
 
-    // level boundaries
+    // draw level.
     ctx.draw.strokeStyle = 'yellow'
     ctx.draw.lineWidth = 4
     ctx.draw.strokeRect(0, 0, lvlWH.x, lvlWH.y)
-
     ctx.draw.fillStyle = ctx.data.grassPattern
     ctx.draw.fillRect(0, 0, lvlWH.x, lvlWH.y)
 
     // UI is updated first to catch any clicks.
     updatePanel(this.#panel, ctx.draw, this.#ctrl)
 
-    updateP1(this.#p1, this.#ctrl, lvlWH, tick)
+    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel)
+
+    if (this.#panel.sing && this.#ctrl.isOnStart('A'))
+      play(
+        this.#audio.ctx,
+        this.#audio.notes.ba,
+        Math.trunc(-4 + Math.random() * 16)
+      )
+
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
     const mag = magnitude(xySub(this.#p1.xy, this.#p1.peered.xy))
     if (angle > 0.05 || mag > 50) this.#postPeerUpdate(now)
@@ -198,6 +211,8 @@ export class Game {
       player: {
         dir: this.#p1.dir,
         flip: this.#p1.flip,
+        instrument: this.#p1.instrument,
+        melody: this.#p1.melody,
         name: this.#p1.name,
         snoovatarURL: this.#p1.snoovatarURL,
         t2: this.#p1.t2,

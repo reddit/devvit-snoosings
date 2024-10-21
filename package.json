@@ -2,11 +2,11 @@
   "author": "Stephen Niedzielski <stephen@oidoid.com> (https://oidoid.com)",
   "description": "snntest20241016a.",
   "dependencies": {
-    "@devvit/public-api": "0.11.0"
+    "@devvit/public-api": "0.11.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "devvit": "0.11.0",
+    "devvit": "0.11.1",
     "esbuild": "0.24.0",
     "typescript": "5.7.0-beta",
     "vitest": "2.1.3"
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist webroot/index.js",
     "format": "npm run formatter -- --fix",
     "formatter": "biome check --error-on-warnings",
-    "playtest": "devvit playtest --connect --log-runtime snoosings|grep --invert --line-buffered '\\[api\\]'",
+    "playtest": "devvit playtest --log-runtime snoosings|grep --invert --line-buffered '\\[api\\]'",
     "preversion": "[ -z \"$(git status -z)\" ]",
     "prepublishOnly": "! git symbolic-ref --quiet HEAD || git push --follow-tags origin \"$(git branch --show-current)\"",
     "start": "trap 'kill 0' exit; npm run build:web -- --watch=forever& npm run playtest& wait",

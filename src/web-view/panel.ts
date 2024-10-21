@@ -14,7 +14,11 @@ export function updatePanel(
   ctx: CanvasRenderingContext2D,
   ctrl: Input<Button>
 ): void {
-  if (ctrl.handled || (!panel.sing && !ctrl.isOnStart('A'))) {
+  if (
+    ctrl.handled ||
+    // the initial click must be inside the button.
+    (!panel.sing && !ctrl.isOnStart('A'))
+  ) {
     panel.sing = false
     return
   }

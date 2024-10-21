@@ -7,6 +7,8 @@ export type Player = {
   dir: XY
   /** flip player render horizontally. */
   flip: boolean
+  instrument: Instrument
+  melody: string
   /** player username. eg, spez. */
   name: string
   /** avatar image URL. */
@@ -18,3 +20,5 @@ export type Player = {
   /** player UUIDv4. always favor this for comparisons if t2_0 is possible. */
   uuid: UUID
 }
+
+export type Instrument = 'jazzman'

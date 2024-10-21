@@ -7,8 +7,6 @@ export type Button = 'A'
 export class Input<T extends string> {
   /** user hint as to whether to consider input or not. */
   handled: boolean = false
-  /** the maximum duration in milliseconds permitted between combo inputs. */
-  maxInterval: number = 300
   /** the minimum duration in milliseconds for an input to be considered held. */
   minHeld: number = 300
 
@@ -79,10 +77,7 @@ export class Input<T extends string> {
     this.#prevBits[1] = this.#prevBits[0]
     this.#prevBits[0] = this.#bits
 
-    if (
-      (this.#duration > this.maxInterval && this.#bits === 0) ||
-      this.#bits !== this.#prevBits[1]
-    ) {
+    if (this.#bits === 0 || this.#bits !== this.#prevBits[1]) {
       // expired or some button has changed but at least one button is pressed.
       this.#duration = 0
     }

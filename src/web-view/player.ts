@@ -1,11 +1,12 @@
 import {type XY, magnitude, xyCloseTo, xyLerp, xySub} from '../shared/2d.js'
 import {clamp} from '../shared/math.js'
 import type {PeerMessage} from '../shared/message.js'
-import type {Player} from '../shared/player.js'
+import type {Instrument, Player} from '../shared/player.js'
 import {anonSnoovatarURL, anonUsername, noT2} from '../shared/tid.js'
 import {type Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import type {Button, Input} from './input/input.js'
 import {green} from './palette.js'
+import type {Panel} from './panel.js'
 
 export type LocalPlayer = Player & {
   peered: {at: number}
@@ -27,6 +28,8 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     dir: {x: 0, y: 0},
     flip: false,
     peered: {at: 0, dir: {x: 0, y: 0}, xy: {x: 0, y: 0}},
+    instrument: randomInstrument(),
+    melody: '', // to-do: fix me
     name: anonUsername,
     snoovatarURL: anonSnoovatarURL,
     snoovatarImg: assets.anonSnoovatar,
@@ -55,11 +58,13 @@ export async function Peer(
     dir: msg.player.dir,
     peered: {at: performance.now()},
     flip: msg.player.flip,
+    instrument: msg.player.instrument,
     lerpTo: {
       x: msg.player.xy.x,
       y: msg.player.xy.y,
       peered: {at: peer?.peered.at ?? 0}
     },
+    melody: msg.player.melody,
     name: msg.player.name,
     snoovatarURL: msg.player.snoovatarURL,
     snoovatarImg,
@@ -73,7 +78,8 @@ export function updateP1(
   p1: P1,
   ctrl: Input<Button>,
   lvlWH: Readonly<XY>,
-  tick: number
+  tick: number,
+  panel: Readonly<Panel>
 ): void {
   const point = !ctrl.handled && ctrl.point && ctrl.isOn('A')
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
@@ -86,6 +92,7 @@ export function updateP1(
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
+  if (panel.sing) p1.melody = 'doodah' // to-do: fix me.
   updatePlayer(p1, lvlWH, tick)
 }
 
@@ -172,4 +179,12 @@ function updatePlayer(
       snoovatarMaxWH.y / 2,
       lvlWH.y
     )
+}
+
+function randomInstrument(): Instrument {
+  const set: {[instrument in Instrument]: null} = {
+    jazzman: null
+  }
+  const arr = Object.keys(set) as Instrument[]
+  return arr[Math.trunc(Math.random() * arr.length)]!
 }
