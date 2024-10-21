@@ -1,3 +1,2 @@
-import {type UserConfig, defineConfig} from 'vitest/config'
-const config: UserConfig = defineConfig({test: {reporters: 'dot'}})
-export default config
+import {defineConfig} from 'vitest/config'
+export default defineConfig({test: {reporters: 'dot'}})

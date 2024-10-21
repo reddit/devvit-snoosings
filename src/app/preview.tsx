@@ -1,6 +1,7 @@
 import {Devvit} from '@devvit/public-api'
 
 export function Preview(): JSX.Element {
+  // to-do: I'd like this feel a little more snoosings-specific.
   return (
     <vstack width={'100%'} height={'100%'} alignment='center middle'>
       <image
@@ -13,7 +14,7 @@ export function Preview(): JSX.Element {
       />
       <spacer size='small' />
       <text size='large' weight='bold'>
-        Reddit vs Zombies
+        We're putting the band back together…
       </text>
     </vstack>
   )

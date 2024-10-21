@@ -1,4 +1,6 @@
 import type {Player} from './player.js'
+import type {T2} from './tid.js'
+import type {UUID} from './uuid.js'
 
 /** a window message from the app to the web view. */
 export type AppMessage = {
@@ -9,9 +11,10 @@ export type AppMessage = {
   id: number
 } & NoIDAppMessage
 
+// hack: Omit<AppMessage, 'id'> was breaking.
 export type NoIDAppMessage =
-  | {type: 'PlayerOneConnected'}
-  | {type: 'PlayerOneDisconnected'}
+  | {type: 'Connected'}
+  | {type: 'Disconnected'}
   /**
    * hack: the web view iframe is loaded immediately but the local runtime is
    * slow. wait until the local runtime is loaded before attempting any state
@@ -19,8 +22,12 @@ export type NoIDAppMessage =
    */
   | {
       type: 'LocalRuntimeLoaded'
+      /**
+       * configure web view lifetime debug mode. this is by request in devvit
+       * but that granularity doesn't make sense in the web view.
+       */
       debug: boolean
-      player: {t2: string; name: string}
+      p1: {name: string; snoovatarURL: string; t2: T2}
     }
   | {type: 'Peer'; msg: PeerMessage}
 
@@ -28,7 +35,8 @@ export type NoIDAppMessage =
 export type PeerMessage = {
   peer: true
   player: Player
-} & {type: 'RemotePlayerHeartbeat'}
+  type: 'PeerUpdate'
+}
 
 /** a window message from the web view to the app. */
-export type WebViewMessage = {type: 'WebViewLoaded'} | PeerMessage
+export type WebViewMessage = {type: 'WebViewLoaded'; uuid: UUID} | PeerMessage

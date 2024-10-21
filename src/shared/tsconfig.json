@@ -1,10 +1,10 @@
-// TypeScript config for all non-webview code.
+// TypeScript config for non-devvit and shared code.
 {
   "extends": "../../tools/tsconfig-base.json",
   "compilerOptions": {
     "lib": ["WebWorker", "ES2020"],
 
-    "outDir": "../../dist",
+    "outDir": "../../dist/shared",
 
     "tsBuildInfoFile": "../../dist/shared/tsconfig.tsbuildinfo"
   },
