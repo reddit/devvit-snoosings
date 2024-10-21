@@ -1,3 +1,4 @@
+import type {Assets} from './assets.js'
 import type {Cam} from './cam.js'
 import type {Input} from './input/input.js'
 
@@ -5,7 +6,10 @@ import type {Input} from './input/input.js'
 export class Looper {
   /** the run lifetime in millis. */
   age: number = 0
-  ctx: CanvasRenderingContext2D | undefined
+  ctx:
+    | {data: {grassPattern: CanvasPattern}; draw: CanvasRenderingContext2D}
+    | undefined
+  readonly assets: Readonly<Assets>
   readonly canvas: HTMLCanvasElement
   /** the exact duration in millis to apply on a given update step. */
   tick: number = 0
@@ -17,7 +21,13 @@ export class Looper {
   #frame?: number | undefined
   #loop?: (() => void) | undefined
 
-  constructor(canvas: HTMLCanvasElement, cam: Cam, ctrl: Input<string>) {
+  constructor(
+    assets: Readonly<Assets>,
+    canvas: HTMLCanvasElement,
+    cam: Cam,
+    ctrl: Input<string>
+  ) {
+    this.assets = assets
     this.canvas = canvas
     this.#cam = cam
     this.#ctrl = ctrl
@@ -54,14 +64,16 @@ export class Looper {
     this.#ctrl.register(op)
   }
 
-  #newCtx(): CanvasRenderingContext2D | undefined {
-    return (
-      this.canvas.getContext('2d', {
-        alpha: false,
-        desynchronized: true,
-        willReadFrequently: false
-      }) ?? undefined
-    )
+  #newCtx():
+    | {data: {grassPattern: CanvasPattern}; draw: CanvasRenderingContext2D}
+    | undefined {
+    const ctx =
+      this.canvas.getContext('2d', {alpha: false, willReadFrequently: false}) ??
+      undefined
+    if (!ctx) return
+    const grassPattern = ctx.createPattern(this.assets.grass, 'repeat')
+    if (!grassPattern) return
+    return {draw: ctx, data: {grassPattern}}
   }
 
   #onEvent = (event: Event): void => {
@@ -86,6 +98,8 @@ export class Looper {
     this.age += this.tick
     const loop = this.#loop
     this.#loop = undefined
+    this.canvas.width = innerWidth
+    this.canvas.height = innerHeight
     this.#cam.resize()
     this.#ctrl.poll(this.tick)
     loop?.()

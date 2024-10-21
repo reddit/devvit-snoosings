@@ -2,7 +2,11 @@ import type {XY} from '../../shared/2d.js'
 import type {Cam} from '../cam.js'
 import {PointerPoller} from './pointer-poller.js'
 
+export type Button = 'A'
+
 export class Input<T extends string> {
+  /** user hint as to whether to consider input or not. */
+  handled: boolean = false
   /** the maximum duration in milliseconds permitted between combo inputs. */
   maxInterval: number = 300
   /** the minimum duration in milliseconds for an input to be considered held. */
@@ -64,6 +68,7 @@ export class Input<T extends string> {
   }
 
   poll(tick: number): void {
+    this.handled = false
     this.#duration += this.#prevTick
     this.#prevTick = tick
     this.#prevBits[1] = this.#prevBits[0]
@@ -83,6 +88,7 @@ export class Input<T extends string> {
   }
 
   reset(): void {
+    this.handled = false
     this.#pointer.reset()
   }
 

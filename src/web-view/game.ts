@@ -6,31 +6,41 @@ import type {
 } from '../shared/message.js'
 import type {Player} from '../shared/player.js'
 import type {UUID} from '../shared/uuid.js'
+import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import {Cam} from './cam.js'
-import {Input} from './input/input.js'
+import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
+import {green} from './palette.js'
 import {P1, Peer, renderPlayer, updateP1, updatePeer} from './player.js'
-import {cachedImg} from './utils/image.js'
 import {throttle} from './utils/throttle.js'
 
-const lvlWH: XY = {x: 512, y: 512}
+const lvlWH: XY = {x: 1024, y: 1024}
 
 const heartbeatPeriodMillis: number = 9_000
 const heartbeatThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
 export class Game {
+  static async new(): Promise<Game> {
+    console.log('snoosings')
+    // don't bother running if the base assets cannot load.
+    const assets = await Assets()
+    return new Game(assets)
+  }
+
+  #assets: Assets
   #cam: Cam
-  #ctrl: Input<'A'>
+  #ctrl: Input<Button>
   #debug: boolean = false
   #looper: Looper
   #msgID: number = -1 // initialized to 0 in app.
-  #p1: P1 = P1(lvlWH)
+  #p1: P1
   /** connected peers and possibly p1. */
   #players: {[uuid: UUID]: Peer} = {}
 
-  constructor() {
-    console.log('snoosings')
+  private constructor(assets: Assets) {
+    this.#assets = assets
+    this.#p1 = P1(assets, lvlWH)
 
     const canvas = Canvas()
 
@@ -40,11 +50,11 @@ export class Game {
     this.#ctrl = new Input(this.#cam, canvas)
     this.#ctrl.mapClick('A', 1)
 
-    this.#looper = new Looper(canvas, this.#cam, this.#ctrl)
+    this.#looper = new Looper(this.#assets, canvas, this.#cam, this.#ctrl)
   }
 
   start(): void {
-    addEventListener('message', this.#onMessage)
+    addEventListener('message', this.#onMsg)
     this.#looper.register('add')
     this.#looper.loop = this.#onLoop
   }
@@ -59,11 +69,11 @@ export class Game {
     this.#looper.loop = this.#onLoop
   }
 
-  #onMessage = (
+  #onMsg = async (
     ev: MessageEvent<
       {type: 'stateUpdate'; data: AppMessage} | {type: undefined}
     >
-  ): void => {
+  ): Promise<void> => {
     if (ev.data.type !== 'stateUpdate') return // hack: filter unknown messages.
 
     let msg: AppMessage | PeerMessage = ev.data.data
@@ -75,7 +85,7 @@ export class Game {
     // unwrap peer messages into standard messages once ID check is done.
     if (msg.type === 'Peer') msg = msg.msg
 
-    // if (this.#debug) console.log(`Game.onMessage=${JSON.stringify(msg)}`)
+    // if (this.#debug) console.log(`Game.#onMsg=${JSON.stringify(msg)}`)
 
     switch (msg.type) {
       case 'Connected':
@@ -92,13 +102,17 @@ export class Game {
         this.#p1.t2 = msg.p1.t2
         this.#p1.name = msg.p1.name
         this.#p1.snoovatarURL = msg.p1.snoovatarURL
-        this.#p1.snoovatarImg = cachedImg(msg.p1)
+        try {
+          this.#assets.p1 = await loadSnoovatar(this.#assets, msg.p1)
+        } catch {}
+        this.#p1.snoovatarImg = this.#assets.p1
         postMessage({type: 'WebViewLoaded', uuid: this.#p1.uuid})
         break
 
       case 'PeerUpdate':
         if (this.#debug) console.log('on peer update')
-        this.#players[msg.player.uuid] = Peer(
+        this.#players[msg.player.uuid] = await Peer(
+          this.#assets,
           this.#players[msg.player.uuid],
           msg
         )
@@ -115,16 +129,29 @@ export class Game {
 
     const now = this.#looper.time ?? performance.now()
 
-    canvas.width = innerWidth // what about world not resizing
-    canvas.height = innerHeight
-    ctx.fillStyle = 'pink'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // clear
+    ctx.draw.fillStyle = green
+    ctx.draw.fillRect(0, 0, canvas.width, canvas.height)
 
+    // UI
     const connected = !!this.#players[this.#p1.uuid]
     if (!connected) {
-      ctx.fillStyle = 'black'
-      ctx.fillText('Disconnected', 10, 10)
+      ctx.draw.fillStyle = 'black'
+      ctx.draw.fillText('Disconnected', 10, 10)
     }
+
+    this.#cam.x = this.#p1.xy.x - canvas.width / 2
+    // player position is rendered at the feet. offset by half avatar height.
+    this.#cam.y = this.#p1.xy.y - snoovatarMaxWH.y / 2 - canvas.height / 2
+    ctx.draw.translate(-this.#cam.x, -this.#cam.y)
+
+    // level boundaries
+    ctx.draw.strokeStyle = 'yellow'
+    ctx.draw.lineWidth = 4
+    ctx.draw.strokeRect(0, 0, lvlWH.x, lvlWH.y)
+
+    ctx.draw.fillStyle = ctx.data.grassPattern
+    ctx.draw.fillRect(0, 0, lvlWH.x, lvlWH.y)
 
     updateP1(this.#p1, this.#ctrl, tick)
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
@@ -139,11 +166,13 @@ export class Game {
         }
 
         updatePeer(player, tick)
-        renderPlayer(ctx, player)
+        renderPlayer(ctx.draw, player)
       }
 
     // render p1 last so they're always on top.
-    renderPlayer(ctx, this.#p1)
+    renderPlayer(ctx.draw, this.#p1)
+
+    ctx.draw.restore()
   }
 
   #playerDisconnected(player: Player): void {
