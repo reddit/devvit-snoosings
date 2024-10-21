@@ -11,6 +11,7 @@ import {Cam} from './cam.js'
 import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
 import {green} from './palette.js'
+import {Panel, renderPanel, updatePanel} from './panel.js'
 import {P1, Peer, renderPlayer, updateP1, updatePeer} from './player.js'
 import {throttle} from './utils/throttle.js'
 
@@ -35,6 +36,7 @@ export class Game {
   #looper: Looper
   #msgID: number = -1 // initialized to 0 in app.
   #p1: P1
+  #panel: Panel = Panel()
   /** connected peers and possibly p1. */
   #players: {[uuid: UUID]: Peer} = {}
 
@@ -133,16 +135,12 @@ export class Game {
     ctx.draw.fillStyle = green
     ctx.draw.fillRect(0, 0, canvas.width, canvas.height)
 
-    // UI
-    const connected = !!this.#players[this.#p1.uuid]
-    if (!connected) {
-      ctx.draw.fillStyle = 'black'
-      ctx.draw.fillText('Disconnected', 10, 10)
-    }
-
-    this.#cam.x = this.#p1.xy.x - canvas.width / 2
+    this.#cam.x = Math.trunc(this.#p1.xy.x) - canvas.width / 2
     // player position is rendered at the feet. offset by half avatar height.
-    this.#cam.y = this.#p1.xy.y - snoovatarMaxWH.y / 2 - canvas.height / 2
+    this.#cam.y = Math.trunc(
+      this.#p1.xy.y - snoovatarMaxWH.y / 2 - canvas.height / 2
+    )
+    ctx.draw.save()
     ctx.draw.translate(-this.#cam.x, -this.#cam.y)
 
     // level boundaries
@@ -153,7 +151,10 @@ export class Game {
     ctx.draw.fillStyle = ctx.data.grassPattern
     ctx.draw.fillRect(0, 0, lvlWH.x, lvlWH.y)
 
-    updateP1(this.#p1, this.#ctrl, tick)
+    // UI is updated first to catch any clicks.
+    updatePanel(this.#panel, ctx.draw, this.#ctrl)
+
+    updateP1(this.#p1, this.#ctrl, lvlWH, tick)
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
     const mag = magnitude(xySub(this.#p1.xy, this.#p1.peered.xy))
     if (angle > 0.05 || mag > 50) this.#postPeerUpdate(now)
@@ -165,7 +166,7 @@ export class Game {
           continue
         }
 
-        updatePeer(player, tick)
+        updatePeer(player, lvlWH, tick)
         renderPlayer(ctx.draw, player)
       }
 
@@ -173,6 +174,16 @@ export class Game {
     renderPlayer(ctx.draw, this.#p1)
 
     ctx.draw.restore()
+
+    // draw UI last.
+    const connected = !!this.#players[this.#p1.uuid]
+    if (!connected) {
+      ctx.draw.fillStyle = 'black'
+      ctx.draw.font = '12px sans-serif'
+      ctx.draw.fillText('disconnected', 10, 10)
+    }
+
+    renderPanel(ctx.draw, this.#panel)
   }
 
   #playerDisconnected(player: Player): void {

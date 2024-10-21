@@ -26,6 +26,11 @@ export class Input<T extends string> {
     this.#pointer = new PointerPoller(cam, canvas)
   }
 
+  // to-do: this isn't very synced with point() which is cleared on reset.
+  get clientPoint(): Readonly<XY> {
+    return this.#pointer.clientXY
+  }
+
   /** true if any button is held on or off. */
   isHeld(): boolean {
     return this.#duration >= this.minHeld

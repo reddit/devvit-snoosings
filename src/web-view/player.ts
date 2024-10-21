@@ -1,4 +1,5 @@
 import {type XY, magnitude, xyCloseTo, xyLerp, xySub} from '../shared/2d.js'
+import {clamp} from '../shared/math.js'
 import type {PeerMessage} from '../shared/message.js'
 import type {Player} from '../shared/player.js'
 import {anonSnoovatarURL, anonUsername, noT2} from '../shared/tid.js'
@@ -32,8 +33,7 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     t2: noT2,
     uuid: crypto.randomUUID(),
     xy: {
-      x:
-        snoovatarMaxWH.x / 2 + Math.random() * (lvlWH.x - snoovatarMaxWH.x / 2),
+      x: snoovatarMaxWH.x / 2 + Math.random() * (lvlWH.x - snoovatarMaxWH.x),
       y: snoovatarMaxWH.y / 2 + Math.random() * (lvlWH.y - snoovatarMaxWH.y / 2)
     }
   }
@@ -69,7 +69,12 @@ export async function Peer(
   }
 }
 
-export function updateP1(p1: P1, ctrl: Input<Button>, tick: number): void {
+export function updateP1(
+  p1: P1,
+  ctrl: Input<Button>,
+  lvlWH: Readonly<XY>,
+  tick: number
+): void {
   const point = !ctrl.handled && ctrl.point && ctrl.isOn('A')
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
   if (point) ctrl.handled = true
@@ -81,10 +86,14 @@ export function updateP1(p1: P1, ctrl: Input<Button>, tick: number): void {
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
-  updatePlayer(p1, tick)
+  updatePlayer(p1, lvlWH, tick)
 }
 
-export function updatePeer(peer: Peer, tick: number): void {
+export function updatePeer(
+  peer: Peer,
+  lvlWH: Readonly<XY>,
+  tick: number
+): void {
   if (peer.lerpTo) {
     // this needs to take time into account. the move player function actually does the trajectory stuff.
     peer.xy = xyLerp(peer.xy, peer.lerpTo, 0.1)
@@ -94,7 +103,7 @@ export function updatePeer(peer: Peer, tick: number): void {
       // biome-ignore lint/performance/noDelete:
       delete peer.lerpTo
     }
-  } else updatePlayer(peer, tick)
+  } else updatePlayer(peer, lvlWH, tick)
 }
 
 export function renderPlayer(
@@ -129,25 +138,38 @@ export function renderPlayer(
   // i think this should be like in the bottom bar where you beat your bk chest
 
   ctx.fillStyle = 'black'
+  ctx.font = '12px sans-serif'
   const text = player.name
   const dims = ctx.measureText(text)
-  const textX = Math.trunc(player.xy.x) - dims.width / 2
-  const textY =
-    Math.trunc(player.xy.y) +
-    dims.fontBoundingBoxAscent +
-    dims.fontBoundingBoxDescent
+  const textX = player.xy.x - dims.width / 2
+
+  const top = player.xy.y + ctx.lineWidth + dims.actualBoundingBoxAscent
+  const textY = Math.trunc(top)
   ctx.strokeStyle = green // just make sure there's contrast if drawing over someone
   ctx.lineWidth = 4
   ctx.strokeText(text, textX, textY)
   ctx.fillText(text, textX, textY)
 }
 
-function updatePlayer(player: LocalPlayer, tick: number): void {
+function updatePlayer(
+  player: LocalPlayer,
+  lvlWH: Readonly<XY>,
+  tick: number
+): void {
   const secs = tick / 1_000
   const {dir} = player
   if (dir.x) {
-    player.xy.x += secs * pxPerSec * dir.x
+    player.xy.x = clamp(
+      player.xy.x + secs * pxPerSec * dir.x,
+      snoovatarMaxWH.x / 2,
+      lvlWH.x - snoovatarMaxWH.x / 2
+    )
     player.flip = dir.x < 0
   }
-  if (dir.y) player.xy.y += secs * pxPerSec * dir.y
+  if (dir.y)
+    player.xy.y = clamp(
+      player.xy.y + secs * pxPerSec * dir.y,
+      snoovatarMaxWH.y / 2,
+      lvlWH.y
+    )
 }

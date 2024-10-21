@@ -1,7 +1,24 @@
 import {clamp, closeTo, lerp} from './math.js'
 
-export type Box = XY & {w: number; h: number}
+/** rectangle. empty is zero width or height. */
+export type Box = XY & WH
+type WH = {w: number; h: number}
 export type XY = {x: number; y: number}
+
+export function boxHits(
+  lhs: Readonly<Box>,
+  rhs: Readonly<XY & Partial<WH>>
+): boolean {
+  const rw = rhs.w ?? 1 // point? an empty box defines zero w/h.
+  const rh = rhs.h ?? 1
+  if (!lhs.w || !lhs.h || !rw || !rh) return false // noncommutative.
+  return (
+    lhs.x < rhs.x + rw &&
+    lhs.x + lhs.w > rhs.x &&
+    lhs.y < rhs.y + rh &&
+    lhs.y + lhs.h > rhs.y
+  )
+}
 
 export function dotProduct(v0: Readonly<XY>, v1: Readonly<XY>): number {
   return v0.x * v1.x + v0.y * v1.y

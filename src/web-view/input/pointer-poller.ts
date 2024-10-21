@@ -3,12 +3,12 @@ import type {Cam} from '../cam.js'
 
 export class PointerPoller {
   bits: number = 0
+  readonly clientXY: XY = {x: 0, y: 0}
   type?: 'mouse' | 'touch' | 'pen' | undefined
   xy?: Readonly<XY> | undefined
   readonly #bitByButton: {[btn: number]: number} = {}
   readonly #cam: Readonly<Cam>
   readonly #canvas: HTMLCanvasElement
-  readonly #clientXY: XY = {x: 0, y: 0}
 
   constructor(cam: Readonly<Cam>, canvas: HTMLCanvasElement) {
     this.#cam = cam
@@ -54,8 +54,8 @@ export class PointerPoller {
     this.type = (<const>['mouse', 'touch', 'pen']).find(
       type => type === ev.pointerType
     )
-    this.xy = this.#cam.toLevelXY(this.#clientXY)
-    ;({clientX: this.#clientXY.x, clientY: this.#clientXY.y} = ev)
+    this.xy = this.#cam.toLevelXY(this.clientXY)
+    ;({clientX: this.clientXY.x, clientY: this.clientXY.y} = ev)
 
     if (ev.type === 'pointerdown') ev.preventDefault() // not passive.
   }

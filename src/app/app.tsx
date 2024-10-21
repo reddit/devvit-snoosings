@@ -42,7 +42,7 @@ export function App(ctx: Devvit.Context): JSX.Element {
   })
 
   function onMessage(msg: WebViewMessage): void {
-    // if (debug) console.log(`App.onMessage=${JSON.stringify(msg)}`)
+    // if (debug) console.log(`${username} App.onMessage=${JSON.stringify(msg)}`)
 
     switch (msg.type) {
       // to-do: this may only work because I've been careful to structure all
