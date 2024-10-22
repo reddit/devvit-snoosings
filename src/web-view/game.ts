@@ -7,7 +7,7 @@ import type {
 import type {Player} from '../shared/player.js'
 import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
-import {Audio, play} from './audio.js'
+import {Audio, noteByInstrument, play} from './audio.js'
 import {Cam} from './cam.js'
 import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
@@ -161,10 +161,10 @@ export class Game {
 
     updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel)
 
-    if (this.#panel.tone != null && this.#ctrl.isOnStart('A'))
+    if (this.#panel.tone != null && this.#panel.tone !== this.#panel.prevTone)
       play(
         this.#audio.ctx,
-        this.#audio.notes.ba,
+        this.#audio.notes[noteByInstrument[this.#p1.instrument]],
         this.#p1.scale + this.#panel.tone
       )
     // to-do: post message on melody time lapse.

@@ -83,6 +83,7 @@ export class Looper {
     if (this.ctx && !document.hidden) {
       if (this.#loop) this.#frame ??= requestAnimationFrame(this.#onFrame)
     } else {
+      // to-do: disconnect the socket when not in use.
       if (this.#frame != null) cancelAnimationFrame(this.#frame)
       this.#frame = undefined
       this.tick = 0

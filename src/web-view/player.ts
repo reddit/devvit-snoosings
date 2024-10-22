@@ -185,8 +185,11 @@ function updatePlayer(
 
 function randomInstrument(): Instrument {
   const set: {[instrument in Instrument]: null} = {
-    clapper: null,
-    jazzman: null
+    Bubbler: null,
+    Guzzler: null,
+    Clapper: null,
+    Jazzman: null,
+    Wailer: null
   }
   const arr = Object.keys(set) as Instrument[]
   return arr[Math.trunc(Math.random() * arr.length)]!

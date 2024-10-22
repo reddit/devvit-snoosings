@@ -1,12 +1,12 @@
 import {type XY, boxHits} from '../shared/2d.js'
 import type {Button, Input} from './input/input.js'
 
-export type Panel = {tone: undefined | 0 | 1 | 2 | 3 | 4}
+export type Panel = {prevTone: number | undefined; tone: number | undefined}
 
 const buttonWH: Readonly<XY> = {x: 320, y: 64}
 
 export function Panel(): Panel {
-  return {tone: undefined}
+  return {prevTone: undefined, tone: undefined}
 }
 
 export function updatePanel(
@@ -14,11 +14,10 @@ export function updatePanel(
   ctx: CanvasRenderingContext2D,
   ctrl: Input<Button>
 ): void {
+  panel.prevTone = panel.tone
   const {x, y} = xy(ctx)
   if (
     ctrl.handled ||
-    // the initial click must be inside the button.
-    (panel.tone == null && !ctrl.isOnStart('A')) ||
     !ctrl.isOn('A') ||
     !boxHits({x, y, w: buttonWH.x, h: buttonWH.y}, ctrl.clientPoint)
   ) {
@@ -27,8 +26,7 @@ export function updatePanel(
   }
 
   const fifth = buttonWH.x / 5
-  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as 0 | 1 | 2 | 3 | 4
-  console.log('ton', panel.tone)
+  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
   ctrl.handled = true
 }
 

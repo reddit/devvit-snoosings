@@ -1,15 +1,37 @@
+import type {Instrument} from '../shared/player.js'
 import type {Assets} from './assets.js'
 
 export type Audio = {
   ctx: AudioContext
   notes: {
     ba: AudioBuffer
+    rg: AudioBuffer
+    pop: AudioBuffer
+    snap: AudioBuffer
+    wa: AudioBuffer
   }
+}
+
+export const noteByInstrument: {
+  [instrument in Instrument]: keyof Audio['notes']
+} = {
+  Bubbler: 'pop',
+  Clapper: 'snap',
+  Guzzler: 'rg',
+  Jazzman: 'ba',
+  Wailer: 'wa'
 }
 
 export async function Audio(assets: Readonly<Assets>): Promise<Audio> {
   const ctx = new AudioContext()
-  return {ctx, notes: {ba: await ctx.decodeAudioData(assets.notes.ba)}}
+  const [ba, rg, pop, snap, wa] = await Promise.all([
+    ctx.decodeAudioData(assets.notes.ba),
+    ctx.decodeAudioData(assets.notes.rg),
+    ctx.decodeAudioData(assets.notes.pop),
+    ctx.decodeAudioData(assets.notes.snap),
+    ctx.decodeAudioData(assets.notes.wa)
+  ])
+  return {ctx, notes: {ba, rg, pop, snap, wa}}
 }
 
 export function play(ctx: AudioContext, buf: AudioBuffer, scale: number): void {
@@ -24,7 +46,7 @@ export function calculatePentatonicPlaybackRate(scale: number): number {
   const pentatonicSemitones = [0, 2, 4, 7, 9]
   const len = pentatonicSemitones.length
   const octave = Math.floor(scale / len)
-  const scaleIndex = ((scale % len) + len) % len // to-do: handle negative scales better.
-  const semitones = pentatonicSemitones[scaleIndex]! + 12 * octave
-  return 2 ** (semitones / 12)
+  const semitone =
+    pentatonicSemitones[((scale % len) + len) % len]! + 12 * octave
+  return 2 ** (semitone / 12)
 }

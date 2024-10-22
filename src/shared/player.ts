@@ -23,7 +23,12 @@ export type Player = {
   xy: XY
 }
 
-export type Instrument = 'clapper' | 'jazzman'
+export type Instrument =
+  | 'Bubbler'
+  | 'Clapper'
+  | 'Guzzler'
+  | 'Jazzman'
+  | 'Wailer'
 
 /** up to 24 x and -. each represents a note for an eighth second window. */
 export type Melody = string

@@ -1,6 +1,6 @@
 {
   "author": "Stephen Niedzielski <stephen@oidoid.com> (https://oidoid.com)",
-  "description": "snntest20241016a.",
+  "description": "the biggest singing-player game ever.",
   "dependencies": {
     "@devvit/public-api": "0.11.1"
   },
