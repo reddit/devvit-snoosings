@@ -3,7 +3,9 @@ import type {Button, Input} from './input/input.js'
 
 export type Panel = {prevTone: number | undefined; tone: number | undefined}
 
-const buttonWH: Readonly<XY> = {x: 320, y: 64}
+const buttonH: number = 92
+
+// to-do: rename to button.
 
 export function Panel(): Panel {
   return {prevTone: undefined, tone: undefined}
@@ -19,13 +21,15 @@ export function updatePanel(
   if (
     ctrl.handled ||
     !ctrl.isOn('A') ||
-    !boxHits({x, y, w: buttonWH.x, h: buttonWH.y}, ctrl.clientPoint)
+    // the initial click must be inside the button.
+    (panel.tone == null && !ctrl.isOnStart('A')) ||
+    !boxHits({x, y, w: ctx.canvas.width, h: buttonH}, ctrl.clientPoint)
   ) {
     panel.tone = undefined
     return
   }
 
-  const fifth = buttonWH.x / 5
+  const fifth = ctx.canvas.width / 5
   panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
   ctrl.handled = true
 }
@@ -43,8 +47,8 @@ export function renderPanel(
   ctx.roundRect(
     x + ctx.lineWidth,
     y + ctx.lineWidth,
-    buttonWH.x - ctx.lineWidth * 2,
-    buttonWH.y - ctx.lineWidth * 2,
+    ctx.canvas.width - ctx.lineWidth * 2,
+    buttonH - ctx.lineWidth * 2,
     4
   )
   ctx.fill()
@@ -58,7 +62,7 @@ export function renderPanel(
   const textX = Math.trunc((ctx.canvas.width - dims.width) / 2)
   const top = y + ctx.lineWidth + dims.actualBoundingBoxAscent
   const height = dims.actualBoundingBoxAscent + dims.actualBoundingBoxDescent
-  const textY = Math.trunc(top + buttonWH.y / 2 - height / 2)
+  const textY = Math.trunc(top + buttonH / 2 - height / 2)
   ctx.lineWidth = 2
   ctx.strokeStyle = 'pink'
   ctx.strokeText(text, textX, textY)
@@ -66,8 +70,5 @@ export function renderPanel(
 }
 
 function xy(ctx: CanvasRenderingContext2D): XY {
-  const margin = 4
-  const x = Math.trunc((ctx.canvas.width - buttonWH.x) / 2)
-  const y = Math.trunc(ctx.canvas.height - buttonWH.y - margin)
-  return {x, y}
+  return {x: 0, y: Math.trunc(ctx.canvas.height - buttonH)}
 }

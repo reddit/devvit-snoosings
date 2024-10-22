@@ -30,5 +30,11 @@ export type Instrument =
   | 'Jazzman'
   | 'Wailer'
 
-/** up to 24 x and -. each represents a note for an eighth second window. */
+/**
+ * 8 notes representing a four-second phrase. each character is A + tonal scale
+ * or dash (empty).
+ */
 export type Melody = string
+
+export const melodyLen: number = 8
+export const melodyMillis: number = 4_000

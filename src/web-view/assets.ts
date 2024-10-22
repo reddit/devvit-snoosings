@@ -20,12 +20,12 @@ export const snoovatarMaxWH: Readonly<XY> = {x: 64, y: 64}
 export async function Assets(): Promise<Assets> {
   const [anonSnoovatar, grass, ba, pop, rg, snap, wa] = await Promise.all([
     loadImage(anonSnoovatarURL),
-    loadImage('grass.png'),
-    loadAudio('ba.ogg'),
-    loadAudio('pop.ogg'),
-    loadAudio('rg.ogg'),
-    loadAudio('snap.ogg'),
-    loadAudio('wa.ogg')
+    loadImage('assets/grass.png'),
+    loadAudio('assets/ba.ogg'),
+    loadAudio('assets/pop.ogg'),
+    loadAudio('assets/rg.ogg'),
+    loadAudio('assets/snap.ogg'),
+    loadAudio('assets/wa.ogg')
   ])
   return {
     anonSnoovatar,

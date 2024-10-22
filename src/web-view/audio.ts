@@ -35,6 +35,7 @@ export async function Audio(assets: Readonly<Assets>): Promise<Audio> {
 }
 
 export function play(ctx: AudioContext, buf: AudioBuffer, scale: number): void {
+  if (ctx.state !== 'running') return // don't allow sounds to queue up.
   const src = ctx.createBufferSource()
   src.buffer = buf
   src.playbackRate.value = calculatePentatonicPlaybackRate(scale)

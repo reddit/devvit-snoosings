@@ -4,13 +4,15 @@ import type {
   PeerMessage,
   WebViewMessage
 } from '../shared/message.js'
-import type {Player} from '../shared/player.js'
+import {type Player, melodyMillis} from '../shared/player.js'
 import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import {Audio, noteByInstrument, play} from './audio.js'
 import {Cam} from './cam.js'
 import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
+import {emptyMelody, melodyDecode, melodySlot} from './melody.js'
+import {renderMetronome} from './metronome.js'
 import {green} from './palette.js'
 import {Panel, renderPanel, updatePanel} from './panel.js'
 import {P1, Peer, renderPlayer, updateP1, updatePeer} from './player.js'
@@ -22,9 +24,11 @@ const heartbeatPeriodMillis: number = 9_000
 const heartbeatThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
+const version: number = 3
+
 export class Game {
   static async new(): Promise<Game> {
-    console.log('snoosings')
+    console.log(`snoosings v0.0.${version}`)
     // don't bother running if the base assets cannot load.
     const assets = await Assets()
     const audio = await Audio(assets)
@@ -42,6 +46,7 @@ export class Game {
   #panel: Panel = Panel()
   /** connected peers and possibly p1. */
   #players: {[uuid: UUID]: Peer} = {}
+  #outdated: boolean = false
 
   private constructor(assets: Assets, audio: Audio) {
     this.#assets = assets
@@ -118,11 +123,16 @@ export class Game {
         break
 
       case 'PeerUpdate':
+        if (msg.version !== version) {
+          this.#outdated ||= msg.version > version
+          break
+        }
         if (this.#debug) console.log('on peer update')
         this.#players[msg.player.uuid] = await Peer(
           this.#assets,
           this.#players[msg.player.uuid],
-          msg
+          msg,
+          this.#players[msg.player.uuid]?.slot
         )
         break
 
@@ -159,7 +169,7 @@ export class Game {
     // UI is updated first to catch any clicks.
     updatePanel(this.#panel, ctx.draw, this.#ctrl)
 
-    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel)
+    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now)
 
     if (this.#panel.tone != null && this.#panel.tone !== this.#panel.prevTone)
       play(
@@ -167,12 +177,18 @@ export class Game {
         this.#audio.notes[noteByInstrument[this.#p1.instrument]],
         this.#p1.scale + this.#panel.tone
       )
-    // to-do: post message on melody time lapse.
 
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
     const mag = magnitude(xySub(this.#p1.xy, this.#p1.peered.xy))
-    if (angle > 0.05 || mag > 50) this.#postPeerUpdate(now)
+    if (
+      angle > 0.05 ||
+      mag > 50 ||
+      (now % melodyMillis > melodyMillis - heartbeatThrottleMillis &&
+        this.#p1.prevMelody !== emptyMelody)
+    )
+      this.#postPeerUpdate(now)
 
+    const slot = melodySlot(now)
     for (const player of Object.values(this.#players))
       if (player.uuid !== this.#p1.uuid) {
         if (now - player.peered.at > disconnectMillis) {
@@ -182,6 +198,15 @@ export class Game {
 
         updatePeer(player, lvlWH, tick)
         renderPlayer(ctx.draw, player)
+        const note = melodyDecode(player.melody, now)
+        if (note != null && player.slot !== slot) {
+          player.slot = slot
+          play(
+            this.#audio.ctx,
+            this.#audio.notes[noteByInstrument[player.instrument]],
+            player.scale + note
+          )
+        }
       }
 
     // render p1 last so they're always on top.
@@ -191,12 +216,17 @@ export class Game {
 
     // draw UI last.
     const connected = !!this.#players[this.#p1.uuid]
-    if (!connected) {
+    if (this.#outdated) {
+      ctx.draw.fillStyle = 'black'
+      ctx.draw.font = '12px sans-serif'
+      ctx.draw.fillText('please reload', 10, 10)
+    } else if (!connected) {
       ctx.draw.fillStyle = 'black'
       ctx.draw.font = '12px sans-serif'
       ctx.draw.fillText('disconnected', 10, 10)
     }
 
+    renderMetronome(ctx.draw, now)
     renderPanel(ctx.draw, this.#panel)
   }
 
@@ -213,7 +243,7 @@ export class Game {
         dir: this.#p1.dir,
         flip: this.#p1.flip,
         instrument: this.#p1.instrument,
-        melody: this.#p1.melody,
+        melody: this.#p1.prevMelody, // may be cleared.
         name: this.#p1.name,
         scale: this.#p1.scale,
         snoovatarURL: this.#p1.snoovatarURL,
@@ -221,7 +251,8 @@ export class Game {
         uuid: this.#p1.uuid,
         xy: this.#p1.xy
       },
-      type: 'PeerUpdate'
+      type: 'PeerUpdate',
+      version
     })
   }, heartbeatThrottleMillis)
 }

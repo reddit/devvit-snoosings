@@ -1,10 +1,11 @@
 import {type XY, magnitude, xyCloseTo, xyLerp, xySub} from '../shared/2d.js'
 import {clamp} from '../shared/math.js'
 import type {PeerMessage} from '../shared/message.js'
-import type {Instrument, Player} from '../shared/player.js'
+import {type Instrument, type Player, melodyMillis} from '../shared/player.js'
 import {anonSnoovatarURL, anonUsername, noT2} from '../shared/tid.js'
 import {type Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import type {Button, Input} from './input/input.js'
+import {Melody, emptyMelody, melodyEncode} from './melody.js'
 import {green} from './palette.js'
 import type {Panel} from './panel.js'
 
@@ -15,10 +16,13 @@ export type LocalPlayer = Player & {
 
 export type P1 = LocalPlayer & {
   peered: {at: number; dir: XY; xy: XY}
+  prevMelody: string
+  updated: number
 }
 
 export type Peer = LocalPlayer & {
   lerpTo?: XY & {peered: {at: number}}
+  slot?: number | undefined // to-do: optional makes it easy to slip on typing.
 }
 
 const pxPerSec: number = 30
@@ -29,12 +33,14 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     flip: false,
     peered: {at: 0, dir: {x: 0, y: 0}, xy: {x: 0, y: 0}},
     instrument: randomInstrument(),
-    melody: '', // to-do: fix me
+    melody: Melody(),
     name: anonUsername,
+    prevMelody: Melody(),
     scale: -3 + Math.trunc(Math.random() * 8),
     snoovatarURL: anonSnoovatarURL,
     snoovatarImg: assets.anonSnoovatar,
     t2: noT2,
+    updated: performance.now(),
     uuid: crypto.randomUUID(),
     xy: {
       x: snoovatarMaxWH.x / 2 + Math.random() * (lvlWH.x - snoovatarMaxWH.x),
@@ -46,7 +52,8 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
 export async function Peer(
   assets: Readonly<Assets>,
   peer: Peer | undefined,
-  msg: PeerMessage
+  msg: PeerMessage,
+  slot: number | undefined
 ): Promise<Peer> {
   let snoovatarImg = peer?.snoovatarImg // try cache.
   if (!snoovatarImg)
@@ -68,6 +75,7 @@ export async function Peer(
     melody: msg.player.melody,
     name: msg.player.name,
     scale: msg.player.scale,
+    slot: slot,
     snoovatarURL: msg.player.snoovatarURL,
     snoovatarImg,
     t2: msg.player.t2,
@@ -81,7 +89,8 @@ export function updateP1(
   ctrl: Input<Button>,
   lvlWH: Readonly<XY>,
   tick: number,
-  panel: Readonly<Panel>
+  panel: Readonly<Panel>,
+  time: number
 ): void {
   const point = !ctrl.handled && ctrl.point && ctrl.isOn('A')
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
@@ -94,7 +103,12 @@ export function updateP1(
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
-  if (panel.tone) p1.melody = 'doodah' // to-do: fix me.
+  if (Math.trunc(time / melodyMillis) > Math.trunc(p1.updated / melodyMillis)) {
+    p1.prevMelody = p1.melody
+    p1.melody = emptyMelody
+    p1.updated = time
+  }
+  if (panel.tone != null) melodyEncode(p1, panel.tone, time)
   updatePlayer(p1, lvlWH, tick)
 }
 

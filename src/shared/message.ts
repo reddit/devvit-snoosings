@@ -36,6 +36,11 @@ export type PeerMessage = {
   peer: true
   player: Player
   type: 'PeerUpdate'
+  /**
+   * filter out messages from different versions. to-do: consider an upgrade
+   * banner or filtering out at the channel level.
+   */
+  version: number
 }
 
 /** a window message from the web view to the app. */
