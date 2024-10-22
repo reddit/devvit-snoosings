@@ -1,9 +1,9 @@
 import {type XY, boxHits} from '../shared/2d.js'
 import type {Button, Input} from './input/input.js'
 
-export type Panel = {tone: undefined | 0 | 2 | 4 | 6}
+export type Panel = {tone: undefined | 0 | 1 | 2 | 3 | 4}
 
-const buttonWH: Readonly<XY> = {x: 256, y: 64}
+const buttonWH: Readonly<XY> = {x: 320, y: 64}
 
 export function Panel(): Panel {
   return {tone: undefined}
@@ -26,8 +26,9 @@ export function updatePanel(
     return
   }
 
-  const quarter = buttonWH.x / 4
-  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / quarter) as 0 | 2 | 4 | 6
+  const fifth = buttonWH.x / 5
+  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as 0 | 1 | 2 | 3 | 4
+  console.log('ton', panel.tone)
   ctrl.handled = true
 }
 

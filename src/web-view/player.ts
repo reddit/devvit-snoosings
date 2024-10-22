@@ -31,6 +31,7 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     instrument: randomInstrument(),
     melody: '', // to-do: fix me
     name: anonUsername,
+    scale: -3 + Math.trunc(Math.random() * 8),
     snoovatarURL: anonSnoovatarURL,
     snoovatarImg: assets.anonSnoovatar,
     t2: noT2,
@@ -66,6 +67,7 @@ export async function Peer(
     },
     melody: msg.player.melody,
     name: msg.player.name,
+    scale: msg.player.scale,
     snoovatarURL: msg.player.snoovatarURL,
     snoovatarImg,
     t2: msg.player.t2,

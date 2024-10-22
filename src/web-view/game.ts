@@ -162,7 +162,11 @@ export class Game {
     updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel)
 
     if (this.#panel.tone != null && this.#ctrl.isOnStart('A'))
-      play(this.#audio.ctx, this.#audio.notes.ba, Math.trunc(this.#panel.tone))
+      play(
+        this.#audio.ctx,
+        this.#audio.notes.ba,
+        this.#p1.scale + this.#panel.tone
+      )
     // to-do: post message on melody time lapse.
 
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
@@ -211,6 +215,7 @@ export class Game {
         instrument: this.#p1.instrument,
         melody: this.#p1.melody,
         name: this.#p1.name,
+        scale: this.#p1.scale,
         snoovatarURL: this.#p1.snoovatarURL,
         t2: this.#p1.t2,
         uuid: this.#p1.uuid,

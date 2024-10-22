@@ -11,6 +11,8 @@ export type Player = {
   melody: Melody
   /** player username. eg, spez. */
   name: string
+  /** Pentatonic tonal scale offset. */
+  scale: number
   /** avatar image URL. */
   snoovatarURL: string
   /** player user ID. t2_0 for anons. */
