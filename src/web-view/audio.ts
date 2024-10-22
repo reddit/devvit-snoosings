@@ -34,12 +34,21 @@ export async function Audio(assets: Readonly<Assets>): Promise<Audio> {
   return {ctx, notes: {ba, rg, pop, snap, wa}}
 }
 
-export function play(ctx: AudioContext, buf: AudioBuffer, scale: number): void {
+export function play(
+  ctx: AudioContext,
+  buf: AudioBuffer,
+  scale: number,
+  volume: number
+): void {
+  if (!volume) return
   if (ctx.state !== 'running') return // don't allow sounds to queue up.
   const src = ctx.createBufferSource()
   src.buffer = buf
   src.playbackRate.value = calculatePentatonicPlaybackRate(scale)
-  src.connect(ctx.destination)
+
+  const gainNode = ctx.createGain()
+  gainNode.gain.value = volume
+  src.connect(gainNode).connect(ctx.destination)
   src.start()
 }
 

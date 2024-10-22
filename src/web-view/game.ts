@@ -19,6 +19,7 @@ import {P1, Peer, renderPlayer, updateP1, updatePeer} from './player.js'
 import {throttle} from './utils/throttle.js'
 
 const lvlWH: XY = {x: 1024, y: 1024}
+const lvlMag: number = magnitude(lvlWH)
 
 const heartbeatPeriodMillis: number = 9_000
 const heartbeatThrottleMillis: number = 300
@@ -175,7 +176,8 @@ export class Game {
       play(
         this.#audio.ctx,
         this.#audio.notes[noteByInstrument[this.#p1.instrument]],
-        this.#p1.scale + this.#panel.tone
+        this.#p1.scale + this.#panel.tone,
+        1
       )
 
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
@@ -204,7 +206,10 @@ export class Game {
           play(
             this.#audio.ctx,
             this.#audio.notes[noteByInstrument[player.instrument]],
-            player.scale + note
+            player.scale + note,
+            1 -
+              Math.min(lvlMag, 3 * magnitude(xySub(this.#p1.xy, player.xy))) /
+                lvlMag
           )
         }
       }
@@ -226,7 +231,7 @@ export class Game {
       ctx.draw.fillText('disconnected', 10, 10)
     }
 
-    renderMetronome(ctx.draw, now)
+    renderMetronome(ctx.draw, this.#p1.melody, now)
     renderPanel(ctx.draw, this.#panel)
   }
 

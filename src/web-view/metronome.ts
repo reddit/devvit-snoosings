@@ -1,8 +1,10 @@
 import {wrap} from '../shared/math.js'
 import {melodyLen, melodyMillis} from '../shared/player.js'
+import {melodySlot} from './melody.js'
 
 export function renderMetronome(
   ctx: CanvasRenderingContext2D,
+  melody: string,
   now: number
 ): void {
   const w = Math.min(256, ctx.canvas.width - 128)
@@ -15,13 +17,21 @@ export function renderMetronome(
   ctx.lineTo(x + w, y)
   ctx.stroke()
 
+  const slot = melodySlot(now)
+
   ctx.strokeStyle = 'black'
   const dividerW = w / melodyLen
   for (let i = 0; i < melodyLen; i++) {
     const odd = (i & 1) === 1
     ctx.lineWidth = 1
     const offset = wrap(
-      w / 2 + -((now % melodyMillis) / melodyMillis) * w + i * dividerW,
+      w / 2 +
+        -(
+          ((now - (0.5 * melodyMillis) / melodyLen) % melodyMillis) /
+          melodyMillis
+        ) *
+          w +
+        i * dividerW,
       0,
       w
     )
@@ -32,9 +42,19 @@ export function renderMetronome(
     ctx.stroke()
 
     ctx.fillStyle = 'black'
+    ctx.font = `${i === slot ? '700 ' : ''}12px sans-serif`
     const text = `${i + 1}`
     const dims = ctx.measureText(text)
-    ctx.fillText(text, offset + x - dims.width / 2, y - 18)
+    ctx.fillText(
+      text,
+      offset + x - dims.width / 2,
+      y + 18 + dims.actualBoundingBoxAscent
+    )
+    if (i <= slot && i > (slot - melodyLen / 2) % melodyLen) {
+      const text = melody[i]!
+      const dims = ctx.measureText(text)
+      ctx.fillText(text, offset + x - dims.width / 2, y - 18)
+    }
   }
 
   ctx.strokeStyle = 'red'

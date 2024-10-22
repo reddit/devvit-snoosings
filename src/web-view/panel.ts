@@ -16,22 +16,27 @@ export function updatePanel(
   ctx: CanvasRenderingContext2D,
   ctrl: Input<Button>
 ): void {
-  panel.prevTone = panel.tone
+  if (ctrl.handled) return
   const {x, y} = xy(ctx)
+  ctrl.handled = boxHits(
+    {x, y, w: ctx.canvas.width, h: buttonH},
+    ctrl.clientPoint
+  )
+
+  panel.prevTone = panel.tone
   if (
-    ctrl.handled ||
     !ctrl.isOn('A') ||
     // the initial click must be inside the button.
     (panel.tone == null && !ctrl.isOnStart('A')) ||
-    !boxHits({x, y, w: ctx.canvas.width, h: buttonH}, ctrl.clientPoint)
+    !ctrl.handled
   ) {
     panel.tone = undefined
     return
   }
 
   const fifth = ctx.canvas.width / 5
-  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
-  ctrl.handled = true
+  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
+  panel.tone = ctrl.isOnStart('A') || panel.tone !== tone ? tone : undefined
 }
 
 export function renderPanel(
