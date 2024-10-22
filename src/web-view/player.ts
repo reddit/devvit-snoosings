@@ -92,7 +92,7 @@ export function updateP1(
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
-  if (panel.sing) p1.melody = 'doodah' // to-do: fix me.
+  if (panel.tone) p1.melody = 'doodah' // to-do: fix me.
   updatePlayer(p1, lvlWH, tick)
 }
 
@@ -183,6 +183,7 @@ function updatePlayer(
 
 function randomInstrument(): Instrument {
   const set: {[instrument in Instrument]: null} = {
+    clapper: null,
     jazzman: null
   }
   const arr = Object.keys(set) as Instrument[]

@@ -161,12 +161,9 @@ export class Game {
 
     updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel)
 
-    if (this.#panel.sing && this.#ctrl.isOnStart('A'))
-      play(
-        this.#audio.ctx,
-        this.#audio.notes.ba,
-        Math.trunc(-4 + Math.random() * 16)
-      )
+    if (this.#panel.tone != null && this.#ctrl.isOnStart('A'))
+      play(this.#audio.ctx, this.#audio.notes.ba, Math.trunc(this.#panel.tone))
+    // to-do: post message on melody time lapse.
 
     const angle = angleBetween(this.#p1.dir, this.#p1.peered.dir)
     const mag = magnitude(xySub(this.#p1.xy, this.#p1.peered.xy))

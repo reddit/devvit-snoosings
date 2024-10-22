@@ -8,17 +8,20 @@ export type Player = {
   /** flip player render horizontally. */
   flip: boolean
   instrument: Instrument
-  melody: string
+  melody: Melody
   /** player username. eg, spez. */
   name: string
   /** avatar image URL. */
   snoovatarURL: string
   /** player user ID. t2_0 for anons. */
   t2: T2
+  /** player UUIDv4. always favor this for comparisons if anon is possible. */
+  uuid: UUID
   /** player position. */
   xy: XY
-  /** player UUIDv4. always favor this for comparisons if t2_0 is possible. */
-  uuid: UUID
 }
 
-export type Instrument = 'jazzman'
+export type Instrument = 'clapper' | 'jazzman'
+
+/** up to 24 x and -. each represents a note for an eighth second window. */
+export type Melody = string

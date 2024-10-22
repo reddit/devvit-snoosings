@@ -1,12 +1,12 @@
 import {type XY, boxHits} from '../shared/2d.js'
 import type {Button, Input} from './input/input.js'
 
-export type Panel = {sing: boolean}
+export type Panel = {tone: undefined | 0 | 2 | 4 | 6}
 
-const buttonWH: Readonly<XY> = {x: 192, y: 64}
+const buttonWH: Readonly<XY> = {x: 256, y: 64}
 
 export function Panel(): Panel {
-  return {sing: false}
+  return {tone: undefined}
 }
 
 export function updatePanel(
@@ -14,19 +14,21 @@ export function updatePanel(
   ctx: CanvasRenderingContext2D,
   ctrl: Input<Button>
 ): void {
+  const {x, y} = xy(ctx)
   if (
     ctrl.handled ||
     // the initial click must be inside the button.
-    (!panel.sing && !ctrl.isOnStart('A'))
+    (panel.tone == null && !ctrl.isOnStart('A')) ||
+    !ctrl.isOn('A') ||
+    !boxHits({x, y, w: buttonWH.x, h: buttonWH.y}, ctrl.clientPoint)
   ) {
-    panel.sing = false
+    panel.tone = undefined
     return
   }
-  const {x, y} = xy(ctx)
-  panel.sing =
-    ctrl.isOn('A') &&
-    boxHits({x, y, w: buttonWH.x, h: buttonWH.y}, ctrl.clientPoint)
-  ctrl.handled = panel.sing
+
+  const quarter = buttonWH.x / 4
+  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / quarter) as 0 | 2 | 4 | 6
+  ctrl.handled = true
 }
 
 export function renderPanel(
@@ -37,7 +39,7 @@ export function renderPanel(
 
   ctx.lineWidth = 2
   ctx.strokeStyle = 'brown'
-  ctx.fillStyle = panel.sing ? 'yellowgreen' : 'grey'
+  ctx.fillStyle = panel.tone != null ? 'yellowgreen' : 'grey'
   ctx.beginPath()
   ctx.roundRect(
     x + ctx.lineWidth,
