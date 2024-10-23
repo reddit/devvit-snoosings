@@ -54,11 +54,11 @@ export function melodyBufferPut(
 }
 
 /** call melodyFlip() first. */
-export function melodyBufferReadOld(buf: Readonly<MelodyBuffer>): Melody {
+export function melodyBufferRead(buf: Readonly<MelodyBuffer>): Melody {
   return buf.write === 'back' ? buf.front : buf.back // return the stale buffer.
 }
 
-export function melodyBufferReadNew(buf: Readonly<MelodyBuffer>): Melody {
+export function melodyBufferPeek(buf: Readonly<MelodyBuffer>): Melody {
   return buf.write === 'back' ? buf.back : buf.front
 }
 

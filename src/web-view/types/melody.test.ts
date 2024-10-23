@@ -3,9 +3,9 @@ import type {Tone} from '../../shared/serial.js'
 import {
   MelodyBuffer,
   melodyBeat,
-  melodyBufferReadNew as melodyBufferPeek,
+  melodyBufferPeek,
   melodyBufferPut,
-  melodyBufferReadOld as melodyBufferRead,
+  melodyBufferRead,
   melodyFlip
 } from './melody-buffer.js'
 import type {UTCMillis} from './time.js'

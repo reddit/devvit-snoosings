@@ -23,10 +23,11 @@ import {Looper} from './looper.js'
 import {
   isMelodyStart,
   melodyBeat,
-  melodyBufferReadOld,
+  melodyBufferRead,
   melodyGet
 } from './types/melody-buffer.js'
 import {type UTCMillis, utcMillisNow} from './types/time.js'
+import {halfSpace, quarterSpace, space} from './utils/layout.js'
 import {green} from './utils/palette.js'
 import {throttle} from './utils/throttle.js'
 
@@ -88,9 +89,9 @@ export class Game {
       await this.#audio.ctx.resume()
     this.#update()
 
-    const now2 = utcMillisNow()
-    if (now2 - this.#p1.peered.at > heartbeatPeriodMillis)
-      this.#postPeerUpdate(now2)
+    const now = utcMillisNow()
+    if (now - this.#p1.peered.at > heartbeatPeriodMillis)
+      this.#postPeerUpdate(now)
 
     this.#looper.loop = this.#onLoop
   }
@@ -158,7 +159,7 @@ export class Game {
     const {canvas, draw, tick} = this.#looper
     if (!draw) return
 
-    const now2 = utcMillisNow()
+    const now = utcMillisNow()
 
     // clear
     draw.ctx.fillStyle = green
@@ -182,7 +183,7 @@ export class Game {
     // UI is updated first to catch any clicks.
     updatePanel(this.#panel, draw.ctx, this.#ctrl)
 
-    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now2)
+    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now)
 
     if (this.#panel.tone != null)
       play(
@@ -197,15 +198,15 @@ export class Game {
     if (
       angle > 0.05 ||
       mag > 50 ||
-      (isMelodyStart(now2) &&
-        melodyBufferReadOld(this.#p1.melody) !== this.#p1.peered.melody)
+      (isMelodyStart(now) &&
+        melodyBufferRead(this.#p1.melody) !== this.#p1.peered.melody)
     )
-      this.#postPeerUpdate(now2)
+      this.#postPeerUpdate(now)
 
-    const beat = melodyBeat(now2)
+    const beat = melodyBeat(now)
     for (const player of Object.values(this.#players))
       if (player.type === 'Peer') {
-        if (now2 - player.peered.at > disconnectMillis) {
+        if (now - player.peered.at > disconnectMillis) {
           this.#playerDisconnected(player)
           continue
         }
@@ -238,13 +239,70 @@ export class Game {
       draw.ctx.fillStyle = 'black'
       draw.ctx.font = '12px sans-serif'
       draw.ctx.fillText('please reload', 10, 10)
-    } else if (!connected) {
-      draw.ctx.fillStyle = 'black'
-      draw.ctx.font = '12px sans-serif'
-      draw.ctx.fillText('disconnected', 10, 10)
     }
 
-    renderMetronome(draw.ctx, this.#p1, now2)
+    {
+      draw.ctx.fillStyle = 'black'
+      draw.ctx.font = '12px sans-serif'
+      const textConnected = connected ? 'live' : 'offline'
+      const dimsConnected = draw.ctx.measureText(textConnected)
+
+      draw.ctx.fillText(
+        textConnected,
+        canvas.width - dimsConnected.width - halfSpace,
+        halfSpace + dimsConnected.actualBoundingBoxAscent
+      )
+
+      draw.ctx.fillStyle = 'black'
+      draw.ctx.font = '700 12px sans-serif'
+      const text = `${Object.keys(this.#players).length}`
+      const dims = draw.ctx.measureText(text)
+
+      draw.ctx.fillText(
+        text,
+        canvas.width - dims.width - halfSpace,
+        halfSpace +
+          +(
+            dimsConnected.actualBoundingBoxAscent +
+            dimsConnected.actualBoundingBoxDescent
+          ) +
+          dims.actualBoundingBoxAscent +
+          quarterSpace
+      )
+    }
+
+    {
+      draw.ctx.fillStyle = 'black'
+      draw.ctx.font = '12px monospace'
+      const y = `${Math.round(this.#p1.xy.y)}`.padStart(
+        `${lvlWH.y}`.length,
+        ' '
+      )
+      const textY = `${y}`
+      const dimsY = draw.ctx.measureText(textY)
+      draw.ctx.fillText(
+        textY,
+        canvas.width - dimsY.width - halfSpace,
+        canvas.height - panelH + -halfSpace
+      )
+      const x = `${Math.round(this.#p1.xy.x)}`.padStart(
+        `${lvlWH.x}`.length,
+        ' '
+      )
+      const textX = `${x}`
+      const dimsX = draw.ctx.measureText(textX)
+      draw.ctx.fillText(
+        textX,
+        canvas.width - dimsX.width - halfSpace,
+        canvas.height -
+          panelH +
+          -halfSpace -
+          dimsY.actualBoundingBoxAscent -
+          quarterSpace
+      )
+    }
+
+    renderMetronome(draw.ctx, this.#p1, now)
     renderPanel(draw.ctx, this.#panel)
   }
 
@@ -254,7 +312,7 @@ export class Game {
 
   #postPeerUpdate = throttle((now: UTCMillis): void => {
     if (this.#debug) console.log('post peer update')
-    const melody = melodyBufferReadOld(this.#p1.melody)
+    const melody = melodyBufferRead(this.#p1.melody)
     this.#p1.peered = {
       at: now,
       dir: {...this.#p1.dir},

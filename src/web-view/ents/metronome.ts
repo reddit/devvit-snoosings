@@ -6,10 +6,13 @@ import {
 } from '../../shared/serial.js'
 import {
   melodyBeat,
-  melodyBufferReadNew,
+  melodyBufferPeek,
+  melodyBufferRead,
   melodyGet
 } from '../types/melody-buffer.js'
 import type {UTCMillis} from '../types/time.js'
+import {halfSpace, quarterSpace, space} from '../utils/layout.js'
+import {panelH} from './panel.js'
 import type {P1} from './player.js'
 
 export function renderMetronome(
@@ -17,9 +20,11 @@ export function renderMetronome(
   p1: P1,
   now: UTCMillis
 ): void {
+  const h = space * 2
   const w = Math.min(256, ctx.canvas.width - 128)
+
   const x = (ctx.canvas.width - w) / 2
-  const y = 48
+  const y = ctx.canvas.height - panelH - (h + halfSpace)
   ctx.lineWidth = 2
   ctx.strokeStyle = 'black'
   ctx.beginPath()
@@ -57,12 +62,12 @@ export function renderMetronome(
     // ctx.fillText(
     //   text,
     //   offset + x - dims.width / 2,
-    //   y + 18 + dims.actualBoundingBoxAscent
+    //   y + (space + quarterSpace) + dims.actualBoundingBoxAscent
     // )
     if (i === 0) {
       // ctx.beginPath()
       // const radius = 2
-      // ctx.arc(offset + x, y + 18, radius, 0, 2 * Math.PI)
+      // ctx.arc(offset + x, y + (space + quarterSpace), radius, 0, 2 * Math.PI)
       // ctx.fillStyle = 'black'
       // ctx.fill()
       const text = '𝄞'
@@ -70,12 +75,19 @@ export function renderMetronome(
       ctx.fillText(
         text,
         offset + x - dims.width / 2,
-        y + 18 + dims.actualBoundingBoxAscent
+        y + space + quarterSpace + dims.actualBoundingBoxAscent
       )
     }
-    if (i <= beat && i > (beat - melodyLen / 2) % melodyLen) {
-      const scale = melodyGet(melodyBufferReadNew(p1.melody), i) // base note is what I have, I get back 0-4
-      if (scale != null) {
+    if (
+      (i <= beat && i > (beat - melodyLen / 2) % melodyLen) ||
+      (beat < melodyLen / 2 && i > beat + melodyLen / 2)
+    ) {
+      const melody =
+        i <= beat && i > (beat - melodyLen / 2) % melodyLen
+          ? melodyBufferPeek(p1.melody)
+          : melodyBufferRead(p1.melody)
+      const tone = melodyGet(melody, i) // base note is what I have, I get back 0-4
+      if (tone != null) {
         const shift =
           pentatonicShift[
             (noteToPentatonicIndex[
@@ -83,12 +95,16 @@ export function renderMetronome(
                 p1.instrument
               ] as (typeof pentatonicShift)[number]
             ] +
-              scale) %
+              tone) %
               pentatonicShift.length
           ]!
         const text = shift
         const dims = ctx.measureText(text)
-        ctx.fillText(text, offset + x - dims.width / 2, y - 18)
+        ctx.fillText(
+          text,
+          offset + x - dims.width / 2,
+          y - (space + quarterSpace)
+        )
       }
     }
   }
