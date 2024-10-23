@@ -13,16 +13,23 @@ import type {UUID} from '../shared/uuid.js'
 export function App(ctx: Devvit.Context): JSX.Element {
   const debug = 'snoosings' in ctx.debug
   const [uuid, setUUID] = useState<UUID | null>(null)
-  const [[username, snoovatarURL]] = useState<[string, string]>(async () => {
-    const user = await ctx.reddit.getCurrentUser()
-    const url = await user?.getSnoovatarUrl()
-    return [user?.username ?? anonUsername, url ?? anonSnoovatarURL]
-  })
+  const [[username, t2, snoovatarURL]] = useState<[string, T2, string]>(
+    async () => {
+      const user = await ctx.reddit.getCurrentUser()
+      const url = await user?.getSnoovatarUrl()
+      // hack: ctx.userId seems to be nullish on native Android.
+      return [
+        user?.username ?? anonUsername,
+        user?.id ?? T2(ctx.userId ?? noT2),
+        url ?? anonSnoovatarURL
+      ]
+    }
+  )
 
   const [msg, postMessage] = useState<Readonly<AppMessage>>({
     debug,
     id: 0,
-    p1: {name: username, snoovatarURL, t2: T2(ctx.userId ?? noT2)},
+    p1: {name: username, snoovatarURL, t2},
     type: 'LocalRuntimeLoaded'
   })
 
@@ -30,6 +37,7 @@ export function App(ctx: Devvit.Context): JSX.Element {
     postMessage(prev => ({...msg, id: prev.id + 1}))
   }
   const chan = useChannel<PeerMessage>({
+    // to-do: verify ctx.postId is not nullish on android.
     // key to current post to prevent interfering with other concerts.
     name: ctx.postId ?? noT3,
     onMessage: msg => {
@@ -58,6 +66,9 @@ export function App(ctx: Devvit.Context): JSX.Element {
 
       default:
         msg.peer satisfies true
+        // to-do: these are actually happening on the remote. reconsider message
+        // loss and WebViewLoaded to-do.
+        console.log(`${username} app.send`)
         chan.send(msg)
     }
   }

@@ -1,4 +1,4 @@
-import type {Player} from './player.js'
+import type {PlayerSerial} from './serial.js'
 import type {T2} from './tid.js'
 import type {UUID} from './uuid.js'
 
@@ -34,7 +34,7 @@ export type NoIDAppMessage =
 /** a realtime message from another instance. */
 export type PeerMessage = {
   peer: true
-  player: Player
+  player: PlayerSerial
   type: 'PeerUpdate'
   /**
    * filter out messages from different versions. to-do: consider an upgrade

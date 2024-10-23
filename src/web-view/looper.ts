@@ -2,13 +2,16 @@ import type {Assets} from './assets.js'
 import type {Cam} from './cam.js'
 import type {Input} from './input/input.js'
 
+export type Draw = {
+  data: {grassPattern: CanvasPattern}
+  ctx: CanvasRenderingContext2D
+}
+
 /** manages window lifecycle for input and rendering. */
 export class Looper {
   /** the run lifetime in millis. */
   age: number = 0
-  ctx:
-    | {data: {grassPattern: CanvasPattern}; draw: CanvasRenderingContext2D}
-    | undefined
+  draw: Draw | undefined
   readonly assets: Readonly<Assets>
   readonly canvas: HTMLCanvasElement
   /** the exact duration in millis to apply on a given update step. */
@@ -31,7 +34,7 @@ export class Looper {
     this.canvas = canvas
     this.#cam = cam
     this.#ctrl = ctrl
-    this.ctx = this.#newCtx()
+    this.draw = this.#newDraw()
   }
 
   cancel(): void {
@@ -50,7 +53,7 @@ export class Looper {
 
   set loop(loop: (() => void) | undefined) {
     this.#loop = loop
-    if (document.hidden || !this.ctx) return
+    if (document.hidden || !this.draw) return
     if (this.#loop) this.#frame ??= requestAnimationFrame(this.#onFrame)
   }
 
@@ -60,27 +63,25 @@ export class Looper {
       this.canvas[fn](type, this.#onEvent, true)
     }
     globalThis[fn]('visibilitychange', this.#onEvent, true)
-    if (op === 'add') this.ctx = this.#newCtx()
+    if (op === 'add') this.draw = this.#newDraw()
     this.#ctrl.register(op)
   }
 
-  #newCtx():
-    | {data: {grassPattern: CanvasPattern}; draw: CanvasRenderingContext2D}
-    | undefined {
+  #newDraw(): Draw | undefined {
     const ctx =
       this.canvas.getContext('2d', {alpha: false, willReadFrequently: false}) ??
       undefined
     if (!ctx) return
     const grassPattern = ctx.createPattern(this.assets.grass, 'repeat')
     if (!grassPattern) return
-    return {draw: ctx, data: {grassPattern}}
+    return {ctx: ctx, data: {grassPattern}}
   }
 
   #onEvent = (event: Event): void => {
     event.preventDefault()
-    if (event.type === 'contextrestored') this.ctx = this.#newCtx()
+    if (event.type === 'contextrestored') this.draw = this.#newDraw()
 
-    if (this.ctx && !document.hidden) {
+    if (this.draw && !document.hidden) {
       if (this.#loop) this.#frame ??= requestAnimationFrame(this.#onFrame)
     } else {
       // to-do: disconnect the socket when not in use.

@@ -1,46 +1,63 @@
-import {type XY, magnitude, xyCloseTo, xyLerp, xySub} from '../shared/2d.js'
-import {clamp} from '../shared/math.js'
-import type {PeerMessage} from '../shared/message.js'
-import {type Instrument, type Player, melodyMillis} from '../shared/player.js'
-import {anonSnoovatarURL, anonUsername, noT2} from '../shared/tid.js'
-import {type Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
-import type {Button, Input} from './input/input.js'
-import {Melody, emptyMelody, melodyEncode} from './melody.js'
-import {green} from './palette.js'
+import {type XY, magnitude, xyCloseTo, xyLerp, xySub} from '../../shared/2d.js'
+import {clamp} from '../../shared/math.js'
+import type {PeerMessage} from '../../shared/message.js'
+import {
+  type Instrument,
+  type Melody,
+  type PlayerSerial,
+  type Tone,
+  silence
+} from '../../shared/serial.js'
+import {anonSnoovatarURL, anonUsername, noT2} from '../../shared/tid.js'
+import {type Assets, loadSnoovatar, snoovatarMaxWH} from '../assets.js'
+import type {Button, Input} from '../input/input.js'
+import {
+  MelodyBuffer,
+  melodyBufferPut,
+  melodyFlip
+} from '../types/melody-buffer.js'
+import {type UTCMillis, utcMillisNow} from '../types/time.js'
+import {green} from '../utils/palette.js'
 import type {Panel} from './panel.js'
 
-export type LocalPlayer = Player & {
-  peered: {at: number}
+export type Player = Omit<PlayerSerial, 'melody'> & {
+  // should this be PlayerSerial no omit
+  peered: {at: UTCMillis; xy: XY | undefined}
   snoovatarImg: HTMLImageElement
 }
 
-export type P1 = LocalPlayer & {
-  peered: {at: number; dir: XY; xy: XY}
-  prevMelody: string
-  updated: number
+export type P1 = Player & {
+  type: 'P1'
+  melody: MelodyBuffer
+  peered: {at: UTCMillis; dir: XY; melody: Melody; xy: XY}
 }
 
-export type Peer = LocalPlayer & {
-  lerpTo?: XY & {peered: {at: number}}
-  slot?: number | undefined // to-do: optional makes it easy to slip on typing.
+export type Peer = Player & {
+  type: 'Peer'
+  beat: number
+  melody: Melody
 }
 
 const pxPerSec: number = 30
 
 export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
   return {
+    type: 'P1',
     dir: {x: 0, y: 0},
-    flip: false,
-    peered: {at: 0, dir: {x: 0, y: 0}, xy: {x: 0, y: 0}},
+    flipX: false,
+    peered: {
+      at: 0 as UTCMillis,
+      dir: {x: 0, y: 0},
+      melody: silence, // do I need this?
+      xy: {x: 0, y: 0}
+    },
     instrument: randomInstrument(),
-    melody: Melody(),
+    melody: MelodyBuffer(),
     name: anonUsername,
-    prevMelody: Melody(),
-    scale: -3 + Math.trunc(Math.random() * 8),
+    tone: (-3 + Math.trunc(Math.random() * 8)) as Tone,
     snoovatarURL: anonSnoovatarURL,
     snoovatarImg: assets.anonSnoovatar,
     t2: noT2,
-    updated: performance.now(),
     uuid: crypto.randomUUID(),
     xy: {
       x: snoovatarMaxWH.x / 2 + Math.random() * (lvlWH.x - snoovatarMaxWH.x),
@@ -52,8 +69,7 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
 export async function Peer(
   assets: Readonly<Assets>,
   peer: Peer | undefined,
-  msg: PeerMessage,
-  slot: number | undefined
+  msg: PeerMessage
 ): Promise<Peer> {
   let snoovatarImg = peer?.snoovatarImg // try cache.
   if (!snoovatarImg)
@@ -63,19 +79,15 @@ export async function Peer(
       snoovatarImg = assets.anonSnoovatar
     }
   return {
+    beat: -1,
+    type: 'Peer',
     dir: msg.player.dir,
-    peered: {at: performance.now()},
-    flip: msg.player.flip,
+    peered: {at: utcMillisNow(), xy: {x: msg.player.xy.x, y: msg.player.xy.y}},
+    flipX: msg.player.flipX,
     instrument: msg.player.instrument,
-    lerpTo: {
-      x: msg.player.xy.x,
-      y: msg.player.xy.y,
-      peered: {at: peer?.peered.at ?? 0}
-    },
     melody: msg.player.melody,
     name: msg.player.name,
-    scale: msg.player.scale,
-    slot: slot,
+    tone: msg.player.tone,
     snoovatarURL: msg.player.snoovatarURL,
     snoovatarImg,
     t2: msg.player.t2,
@@ -90,7 +102,7 @@ export function updateP1(
   lvlWH: Readonly<XY>,
   tick: number,
   panel: Readonly<Panel>,
-  time: number
+  time: UTCMillis
 ): void {
   const point = !ctrl.handled && ctrl.point && ctrl.isOn('A')
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
@@ -103,12 +115,8 @@ export function updateP1(
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
-  if (Math.trunc(time / melodyMillis) > Math.trunc(p1.updated / melodyMillis)) {
-    p1.prevMelody = p1.melody
-    p1.melody = emptyMelody
-    p1.updated = time
-  }
-  if (panel.tone != null) melodyEncode(p1, panel.tone, time)
+  melodyFlip(p1.melody, time)
+  if (panel.tone != null) melodyBufferPut(p1.melody, panel.tone, time)
   updatePlayer(p1, lvlWH, tick)
 }
 
@@ -117,21 +125,20 @@ export function updatePeer(
   lvlWH: Readonly<XY>,
   tick: number
 ): void {
-  if (peer.lerpTo) {
+  if (peer.peered.xy) {
     // this needs to take time into account. the move player function actually does the trajectory stuff.
-    peer.xy = xyLerp(peer.xy, peer.lerpTo, 0.1)
+    peer.xy = xyLerp(peer.xy, peer.peered.xy, 0.1)
 
-    if (xyCloseTo(peer.xy, peer.lerpTo, 1)) {
-      peer.xy = peer.lerpTo
-      // biome-ignore lint/performance/noDelete:
-      delete peer.lerpTo
+    if (xyCloseTo(peer.xy, peer.peered.xy, 1)) {
+      peer.xy = peer.peered.xy
+      peer.peered.xy = undefined
     }
   } else updatePlayer(peer, lvlWH, tick)
 }
 
 export function renderPlayer(
   ctx: CanvasRenderingContext2D,
-  player: Readonly<LocalPlayer>
+  player: Readonly<Player>
 ): void {
   if (player.snoovatarImg.naturalWidth && player.snoovatarImg.naturalHeight) {
     const scale = snoovatarMaxWH.y / player.snoovatarImg.naturalHeight
@@ -139,7 +146,7 @@ export function renderPlayer(
       w: player.snoovatarImg.naturalWidth * scale,
       h: player.snoovatarImg.naturalHeight * scale
     }
-    const flip = player.flip ? -1 : 1
+    const flip = player.flipX ? -1 : 1
     ctx.save()
     ctx.scale(flip, 1)
     ctx.drawImage(
@@ -174,11 +181,7 @@ export function renderPlayer(
   ctx.fillText(text, textX, textY)
 }
 
-function updatePlayer(
-  player: LocalPlayer,
-  lvlWH: Readonly<XY>,
-  tick: number
-): void {
+function updatePlayer(player: Player, lvlWH: Readonly<XY>, tick: number): void {
   const secs = tick / 1_000
   const {dir} = player
   if (dir.x) {
@@ -187,7 +190,7 @@ function updatePlayer(
       snoovatarMaxWH.x / 2,
       lvlWH.x - snoovatarMaxWH.x / 2
     )
-    player.flip = dir.x < 0
+    player.flipX = dir.x < 0
   }
   if (dir.y)
     player.xy.y = clamp(
@@ -200,9 +203,9 @@ function updatePlayer(
 function randomInstrument(): Instrument {
   const set: {[instrument in Instrument]: null} = {
     Bubbler: null,
-    Guzzler: null,
     Clapper: null,
     Jazzman: null,
+    Rgggggg: null,
     Wailer: null
   }
   const arr = Object.keys(set) as Instrument[]

@@ -1,11 +1,13 @@
-import {type XY, boxHits} from '../shared/2d.js'
-import type {Button, Input} from './input/input.js'
+import {type XY, boxHits} from '../../shared/2d.js'
+import type {Tone} from '../../shared/serial.js'
+import type {Button, Input} from '../input/input.js'
 
-export type Panel = {prevTone: number | undefined; tone: number | undefined}
+export type Panel = {
+  tone: Tone | undefined
+  prevTone: Tone | undefined
+}
 
 const buttonH: number = 92
-
-// to-do: rename to button.
 
 export function Panel(): Panel {
   return {prevTone: undefined, tone: undefined}
@@ -35,7 +37,7 @@ export function updatePanel(
   }
 
   const fifth = ctx.canvas.width / 5
-  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
+  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as Tone
   panel.tone = ctrl.isOnStart('A') || panel.tone !== tone ? tone : undefined
 }
 

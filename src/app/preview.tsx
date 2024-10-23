@@ -1,7 +1,7 @@
 import {Devvit} from '@devvit/public-api'
 
 export function Preview(): JSX.Element {
-  // to-do: I'd like this feel a little more snoosings-specific.
+  // to-do: this should be a TV showing static.
   return (
     <vstack width={'100%'} height={'100%'} alignment='center middle'>
       <image

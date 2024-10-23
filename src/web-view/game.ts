@@ -4,25 +4,37 @@ import type {
   PeerMessage,
   WebViewMessage
 } from '../shared/message.js'
-import {type Player, melodyMillis} from '../shared/player.js'
 import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
-import {Audio, noteByInstrument, play} from './audio.js'
+import {Audio, play} from './audio/audio.js'
 import {Cam} from './cam.js'
+import {renderMetronome} from './ents/metronome.js'
+import {Panel, renderPanel, updatePanel} from './ents/panel.js'
+import {
+  P1,
+  Peer,
+  type Player,
+  renderPlayer,
+  updateP1,
+  updatePeer
+} from './ents/player.js'
 import {type Button, Input} from './input/input.js'
 import {Looper} from './looper.js'
-import {emptyMelody, melodyDecode, melodySlot} from './melody.js'
-import {renderMetronome} from './metronome.js'
-import {green} from './palette.js'
-import {Panel, renderPanel, updatePanel} from './panel.js'
-import {P1, Peer, renderPlayer, updateP1, updatePeer} from './player.js'
+import {
+  isMelodyStart,
+  melodyBeat,
+  melodyBufferReadOld,
+  melodyGet
+} from './types/melody-buffer.js'
+import {type UTCMillis, utcMillisNow} from './types/time.js'
+import {green} from './utils/palette.js'
 import {throttle} from './utils/throttle.js'
 
 const lvlWH: XY = {x: 1024, y: 1024}
 const lvlMag: number = magnitude(lvlWH)
 
 const heartbeatPeriodMillis: number = 9_000
-const heartbeatThrottleMillis: number = 300
+const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
 const version: number = 3
@@ -46,7 +58,7 @@ export class Game {
   #p1: P1
   #panel: Panel = Panel()
   /** connected peers and possibly p1. */
-  #players: {[uuid: UUID]: Peer} = {}
+  #players: {[uuid: UUID]: Peer | P1} = {}
   #outdated: boolean = false
 
   private constructor(assets: Assets, audio: Audio) {
@@ -76,9 +88,9 @@ export class Game {
       await this.#audio.ctx.resume()
     this.#update()
 
-    const now = this.#looper.time ?? performance.now()
-    if (now - this.#p1.peered.at > heartbeatPeriodMillis)
-      this.#postPeerUpdate(now)
+    const now2 = utcMillisNow()
+    if (now2 - this.#p1.peered.at > heartbeatPeriodMillis)
+      this.#postPeerUpdate(now2)
 
     this.#looper.loop = this.#onLoop
   }
@@ -124,17 +136,17 @@ export class Game {
         break
 
       case 'PeerUpdate':
-        if (msg.version !== version) {
-          this.#outdated ||= msg.version > version
-          break
+        {
+          if (msg.version !== version) {
+            this.#outdated ||= msg.version > version
+            break
+          }
+          if (this.#debug) console.log('on peer update')
+          const prev = this.#players[msg.player.uuid]
+          if (prev && prev.type !== 'Peer')
+            throw Error('received message from self')
+          this.#players[msg.player.uuid] = await Peer(this.#assets, prev, msg)
         }
-        if (this.#debug) console.log('on peer update')
-        this.#players[msg.player.uuid] = await Peer(
-          this.#assets,
-          this.#players[msg.player.uuid],
-          msg,
-          this.#players[msg.player.uuid]?.slot
-        )
         break
 
       default:
@@ -143,40 +155,40 @@ export class Game {
   }
 
   #update(): void {
-    const {canvas, ctx, tick} = this.#looper
-    if (!ctx) return
+    const {canvas, draw, tick} = this.#looper
+    if (!draw) return
 
-    const now = this.#looper.time ?? performance.now()
+    const now2 = utcMillisNow()
 
     // clear
-    ctx.draw.fillStyle = green
-    ctx.draw.fillRect(0, 0, canvas.width, canvas.height)
+    draw.ctx.fillStyle = green
+    draw.ctx.fillRect(0, 0, canvas.width, canvas.height)
 
     this.#cam.x = Math.trunc(this.#p1.xy.x) - canvas.width / 2
     // player position is rendered at the feet. offset by half avatar height.
     this.#cam.y = Math.trunc(
       this.#p1.xy.y - snoovatarMaxWH.y / 2 - canvas.height / 2
     )
-    ctx.draw.save()
-    ctx.draw.translate(-this.#cam.x, -this.#cam.y)
+    draw.ctx.save()
+    draw.ctx.translate(-this.#cam.x, -this.#cam.y)
 
     // draw level.
-    ctx.draw.strokeStyle = 'yellow'
-    ctx.draw.lineWidth = 4
-    ctx.draw.strokeRect(0, 0, lvlWH.x, lvlWH.y)
-    ctx.draw.fillStyle = ctx.data.grassPattern
-    ctx.draw.fillRect(0, 0, lvlWH.x, lvlWH.y)
+    draw.ctx.strokeStyle = 'yellow'
+    draw.ctx.lineWidth = 4
+    draw.ctx.strokeRect(0, 0, lvlWH.x, lvlWH.y)
+    draw.ctx.fillStyle = draw.data.grassPattern
+    draw.ctx.fillRect(0, 0, lvlWH.x, lvlWH.y)
 
     // UI is updated first to catch any clicks.
-    updatePanel(this.#panel, ctx.draw, this.#ctrl)
+    updatePanel(this.#panel, draw.ctx, this.#ctrl)
 
-    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now)
+    updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now2)
 
     if (this.#panel.tone != null && this.#panel.tone !== this.#panel.prevTone)
       play(
         this.#audio.ctx,
-        this.#audio.notes[noteByInstrument[this.#p1.instrument]],
-        this.#p1.scale + this.#panel.tone,
+        this.#audio.instruments[this.#p1.instrument],
+        this.#p1.tone + this.#panel.tone,
         1
       )
 
@@ -185,28 +197,29 @@ export class Game {
     if (
       angle > 0.05 ||
       mag > 50 ||
-      (now % melodyMillis > melodyMillis - heartbeatThrottleMillis &&
-        this.#p1.prevMelody !== emptyMelody)
+      (isMelodyStart(now2) &&
+        melodyBufferReadOld(this.#p1.melody) !== this.#p1.peered.melody)
     )
-      this.#postPeerUpdate(now)
+      this.#postPeerUpdate(now2)
 
-    const slot = melodySlot(now)
+    const beat = melodyBeat(now2)
     for (const player of Object.values(this.#players))
-      if (player.uuid !== this.#p1.uuid) {
-        if (now - player.peered.at > disconnectMillis) {
+      if (player.type === 'Peer') {
+        if (now2 - player.peered.at > disconnectMillis) {
           this.#playerDisconnected(player)
           continue
         }
 
         updatePeer(player, lvlWH, tick)
-        renderPlayer(ctx.draw, player)
-        const note = melodyDecode(player.melody, now)
-        if (note != null && player.slot !== slot) {
-          player.slot = slot
+        renderPlayer(draw.ctx, player)
+        const tone = melodyGet(player.melody, beat)
+        if (tone != null && player.beat !== beat) {
+          // I want this to only play once. I want to only play on the start of new measure.
+          player.beat = beat
           play(
             this.#audio.ctx,
-            this.#audio.notes[noteByInstrument[player.instrument]],
-            player.scale + note,
+            this.#audio.instruments[player.instrument],
+            player.tone + tone,
             1 -
               Math.min(lvlMag, 3 * magnitude(xySub(this.#p1.xy, player.xy))) /
                 lvlMag
@@ -215,42 +228,48 @@ export class Game {
       }
 
     // render p1 last so they're always on top.
-    renderPlayer(ctx.draw, this.#p1)
+    renderPlayer(draw.ctx, this.#p1)
 
-    ctx.draw.restore()
+    draw.ctx.restore()
 
     // draw UI last.
     const connected = !!this.#players[this.#p1.uuid]
     if (this.#outdated) {
-      ctx.draw.fillStyle = 'black'
-      ctx.draw.font = '12px sans-serif'
-      ctx.draw.fillText('please reload', 10, 10)
+      draw.ctx.fillStyle = 'black'
+      draw.ctx.font = '12px sans-serif'
+      draw.ctx.fillText('please reload', 10, 10)
     } else if (!connected) {
-      ctx.draw.fillStyle = 'black'
-      ctx.draw.font = '12px sans-serif'
-      ctx.draw.fillText('disconnected', 10, 10)
+      draw.ctx.fillStyle = 'black'
+      draw.ctx.font = '12px sans-serif'
+      draw.ctx.fillText('disconnected', 10, 10)
     }
 
-    renderMetronome(ctx.draw, this.#p1.melody, now)
-    renderPanel(ctx.draw, this.#panel)
+    renderMetronome(draw.ctx, this.#p1, now2)
+    renderPanel(draw.ctx, this.#panel)
   }
 
   #playerDisconnected(player: Player): void {
     delete this.#players[player.uuid]
   }
 
-  #postPeerUpdate = throttle((now: number): void => {
+  #postPeerUpdate = throttle((now: UTCMillis): void => {
     if (this.#debug) console.log('post peer update')
-    this.#p1.peered = {at: now, xy: {...this.#p1.xy}, dir: {...this.#p1.dir}}
+    const melody = melodyBufferReadOld(this.#p1.melody)
+    this.#p1.peered = {
+      at: now,
+      dir: {...this.#p1.dir},
+      melody,
+      xy: {...this.#p1.xy}
+    }
     postMessage({
       peer: true,
       player: {
         dir: this.#p1.dir,
-        flip: this.#p1.flip,
+        flipX: this.#p1.flipX,
         instrument: this.#p1.instrument,
-        melody: this.#p1.prevMelody, // may be cleared.
+        melody,
         name: this.#p1.name,
-        scale: this.#p1.scale,
+        tone: this.#p1.tone,
         snoovatarURL: this.#p1.snoovatarURL,
         t2: this.#p1.t2,
         uuid: this.#p1.uuid,
@@ -259,7 +278,7 @@ export class Game {
       type: 'PeerUpdate',
       version
     })
-  }, heartbeatThrottleMillis)
+  }, peerThrottleMillis)
 }
 
 function Canvas(): HTMLCanvasElement {
