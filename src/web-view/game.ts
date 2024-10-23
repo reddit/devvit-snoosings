@@ -9,7 +9,7 @@ import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import {Audio, play} from './audio/audio.js'
 import {Cam} from './cam.js'
 import {renderMetronome} from './ents/metronome.js'
-import {Panel, renderPanel, updatePanel} from './ents/panel.js'
+import {Panel, panelH, renderPanel, updatePanel} from './ents/panel.js'
 import {
   P1,
   Peer,
@@ -167,7 +167,7 @@ export class Game {
     this.#cam.x = Math.trunc(this.#p1.xy.x) - canvas.width / 2
     // player position is rendered at the feet. offset by half avatar height.
     this.#cam.y = Math.trunc(
-      this.#p1.xy.y - snoovatarMaxWH.y / 2 - canvas.height / 2
+      this.#p1.xy.y - snoovatarMaxWH.y / 2 - (canvas.height - panelH) / 2
     )
     draw.ctx.save()
     draw.ctx.translate(-this.#cam.x, -this.#cam.y)
@@ -184,7 +184,7 @@ export class Game {
 
     updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now2)
 
-    if (this.#panel.tone != null && this.#panel.tone !== this.#panel.prevTone)
+    if (this.#panel.tone != null)
       play(
         this.#audio.ctx,
         this.#audio.instruments[this.#p1.instrument],

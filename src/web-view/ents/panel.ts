@@ -2,15 +2,12 @@ import {type XY, boxHits} from '../../shared/2d.js'
 import type {Tone} from '../../shared/serial.js'
 import type {Button, Input} from '../input/input.js'
 
-export type Panel = {
-  tone: Tone | undefined
-  prevTone: Tone | undefined
-}
+export type Panel = {tone: Tone | undefined}
 
-const buttonH: number = 92
+export const panelH: number = 128
 
 export function Panel(): Panel {
-  return {prevTone: undefined, tone: undefined}
+  return {tone: undefined}
 }
 
 export function updatePanel(
@@ -21,11 +18,10 @@ export function updatePanel(
   if (ctrl.handled) return
   const {x, y} = xy(ctx)
   ctrl.handled = boxHits(
-    {x, y, w: ctx.canvas.width, h: buttonH},
+    {x, y, w: ctx.canvas.width, h: panelH},
     ctrl.clientPoint
   )
 
-  panel.prevTone = panel.tone
   if (
     !ctrl.isOn('A') ||
     // the initial click must be inside the button.
@@ -55,7 +51,7 @@ export function renderPanel(
     x + ctx.lineWidth,
     y + ctx.lineWidth,
     ctx.canvas.width - ctx.lineWidth * 2,
-    buttonH - ctx.lineWidth * 2,
+    panelH - ctx.lineWidth * 2,
     4
   )
   ctx.fill()
@@ -69,7 +65,7 @@ export function renderPanel(
   const textX = Math.trunc((ctx.canvas.width - dims.width) / 2)
   const top = y + ctx.lineWidth + dims.actualBoundingBoxAscent
   const height = dims.actualBoundingBoxAscent + dims.actualBoundingBoxDescent
-  const textY = Math.trunc(top + buttonH / 2 - height / 2)
+  const textY = Math.trunc(top + panelH / 2 - height / 2)
   ctx.lineWidth = 2
   ctx.strokeStyle = 'pink'
   ctx.strokeText(text, textX, textY)
@@ -77,5 +73,5 @@ export function renderPanel(
 }
 
 function xy(ctx: CanvasRenderingContext2D): XY {
-  return {x: 0, y: Math.trunc(ctx.canvas.height - buttonH)}
+  return {x: 0, y: Math.trunc(ctx.canvas.height - panelH)}
 }

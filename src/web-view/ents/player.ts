@@ -20,8 +20,8 @@ import {type UTCMillis, utcMillisNow} from '../types/time.js'
 import {green} from '../utils/palette.js'
 import type {Panel} from './panel.js'
 
+// should this be PlayerSerial no omit
 export type Player = Omit<PlayerSerial, 'melody'> & {
-  // should this be PlayerSerial no omit
   peered: {at: UTCMillis; xy: XY | undefined}
   snoovatarImg: HTMLImageElement
 }
