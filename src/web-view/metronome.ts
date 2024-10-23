@@ -22,7 +22,7 @@ export function renderMetronome(
   ctx.strokeStyle = 'black'
   const dividerW = w / melodyLen
   for (let i = 0; i < melodyLen; i++) {
-    const odd = (i & 1) === 1
+    const even = (i & 1) === 0
     ctx.lineWidth = 1
     const offset = wrap(
       w / 2 +
@@ -35,25 +35,31 @@ export function renderMetronome(
       0,
       w
     )
-
     ctx.beginPath()
-    ctx.moveTo(offset + x, y - 8 - (odd ? 8 : 0))
-    ctx.lineTo(offset + x, y + 8 + (odd ? 8 : 0))
+    ctx.moveTo(offset + x, y - 8 - (even ? 8 : 0))
+    ctx.lineTo(offset + x, y + 8 + (even ? 8 : 0))
     ctx.stroke()
 
     ctx.fillStyle = 'black'
     ctx.font = `${i === slot ? '700 ' : ''}12px sans-serif`
-    const text = `${i + 1}`
-    const dims = ctx.measureText(text)
-    ctx.fillText(
-      text,
-      offset + x - dims.width / 2,
-      y + 18 + dims.actualBoundingBoxAscent
-    )
+    // const text = `${i + 1}`
+    // const dims = ctx.measureText(text)
+    // ctx.fillText(
+    //   text,
+    //   offset + x - dims.width / 2,
+    //   y + 18 + dims.actualBoundingBoxAscent
+    // )
+    if (i === 0) {
+      ctx.beginPath()
+      const radius = 2
+      ctx.arc(offset + x, y + 18, radius, 0, 2 * Math.PI)
+      ctx.fillStyle = 'black'
+      ctx.fill()
+    }
     if (i <= slot && i > (slot - melodyLen / 2) % melodyLen) {
       const text = melody[i]!
       const dims = ctx.measureText(text)
-      ctx.fillText(text, offset + x - dims.width / 2, y - 18)
+      if (text !== '-') ctx.fillText(text, offset + x - dims.width / 2, y - 18)
     }
   }
 
