@@ -28,7 +28,7 @@ import {
   melodyGet
 } from './types/melody-buffer.js'
 import {type UTCMillis, utcMillisNow} from './types/time.js'
-import {halfSpace, quarterSpace, space} from './utils/layout.js'
+import {halfSpace, quarterSpace} from './utils/layout.js'
 import {green} from './utils/palette.js'
 import {throttle} from './utils/throttle.js'
 
@@ -61,6 +61,7 @@ export class Game {
   #panel: Panel = Panel()
   /** connected peers and possibly p1. */
   #players: {[uuid: UUID]: Peer | P1} = {}
+  #prevBeat: number = 0
   #outdated: boolean = false
 
   private constructor(assets: Assets, audio: Audio) {
@@ -210,6 +211,8 @@ export class Game {
       this.#postPeerUpdate(now)
 
     const beat = melodyBeat(now)
+    const isNewMelodyStart = this.#prevBeat > beat
+    this.#prevBeat = beat
     for (const player of Object.values(this.#players))
       if (player.type === 'Peer') {
         if (now - player.peered.at > disconnectMillis) {
@@ -217,7 +220,7 @@ export class Game {
           continue
         }
 
-        updatePeer(player, lvlWH, tick)
+        updatePeer(player, lvlWH, tick, isNewMelodyStart)
         renderPlayer(draw.ctx, player)
         const tone = melodyGet(player.melody, beat)
         if (tone != null && now - player.played >= beatMillis) {

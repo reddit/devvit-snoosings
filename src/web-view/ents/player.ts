@@ -7,7 +7,6 @@ import {
   type PlayerSerial,
   type Tone,
   beatMillis,
-  melodyMillis,
   silence
 } from '../../shared/serial.js'
 import {anonSnoovatarURL, anonUsername, noT2} from '../../shared/tid.js'
@@ -24,14 +23,14 @@ import type {Panel} from './panel.js'
 
 // should this be PlayerSerial no omit
 export type Player = Omit<PlayerSerial, 'melody'> & {
-  peered: {at: UTCMillis; xy: XY | undefined}
+  peered: {at: UTCMillis; melody: Melody; xy: XY | undefined}
   snoovatarImg: HTMLImageElement
 }
 
 export type P1 = Player & {
   type: 'P1'
   melody: MelodyBuffer
-  peered: {at: UTCMillis; dir: XY; melody: Melody; xy: XY}
+  peered: {at: UTCMillis; melody: Melody; dir: XY; xy: XY}
 }
 
 export type Peer = Player & {
@@ -50,7 +49,7 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     peered: {
       at: 0 as UTCMillis,
       dir: {x: 0, y: 0},
-      melody: silence, // do I need this?
+      melody: silence,
       xy: {x: 0, y: 0}
     },
     instrument: randomInstrument(),
@@ -85,10 +84,15 @@ export async function Peer(
     played: (time - (time % beatMillis)) as UTCMillis,
     type: 'Peer',
     dir: msg.player.dir,
-    peered: {at: utcMillisNow(), xy: {x: msg.player.xy.x, y: msg.player.xy.y}},
+    peered: {
+      at: msg.player.melody === peer?.melody ? peer.peered.at : utcMillisNow(),
+      melody: msg.player.melody,
+      xy: {x: msg.player.xy.x, y: msg.player.xy.y}
+    },
     flipX: msg.player.flipX,
     instrument: msg.player.instrument,
-    melody: msg.player.melody,
+    // don't interrupt any active phrase.
+    melody: peer?.melody ?? msg.player.melody,
     name: msg.player.name,
     root: msg.player.root,
     snoovatarURL: msg.player.snoovatarURL,
@@ -130,8 +134,10 @@ export function updateP1(
 export function updatePeer(
   peer: Peer,
   lvlWH: Readonly<XY>,
-  tick: number
+  tick: number,
+  isNewMelodyStart: boolean
 ): void {
+  if (isNewMelodyStart) peer.melody = peer.peered.melody
   if (peer.peered.xy) {
     // this needs to take time into account. the move player function actually does the trajectory stuff.
     peer.xy = xyLerp(peer.xy, peer.peered.xy, 0.1)
