@@ -195,7 +195,7 @@ export class Game {
       play(
         this.#audio.ctx,
         this.#audio.instruments[this.#p1.instrument],
-        this.#p1.tone + this.#panel.tone,
+        this.#p1.root + this.#panel.tone,
         1
       )
 
@@ -226,7 +226,7 @@ export class Game {
           play(
             this.#audio.ctx,
             this.#audio.instruments[player.instrument],
-            player.tone + tone,
+            player.root + tone,
             1 -
               Math.min(lvlMag, 3 * magnitude(xySub(this.#p1.xy, player.xy))) /
                 lvlMag
@@ -333,7 +333,7 @@ export class Game {
         instrument: this.#p1.instrument,
         melody,
         name: this.#p1.name,
-        tone: this.#p1.tone,
+        root: this.#p1.root,
         snoovatarURL: this.#p1.snoovatarURL,
         t2: this.#p1.t2,
         uuid: this.#p1.uuid,

@@ -12,9 +12,9 @@ export type PlayerSerial = {
   melody: Melody
   /** player username. eg, spez. */
   name: string
+  root: Tone
   /** avatar image URL. */
   snoovatarURL: string
-  tone: Tone
   /** player user ID. t2_0 for anons. */
   t2: T2
   /** player UUIDv4. always favor this for comparisons if anon is possible. */
@@ -31,8 +31,8 @@ export type Instrument =
   | 'Wailer'
 
 export const formattedInstrumentNote: {[instrument in Instrument]: string} = {
-  Bubbler: 'A', // 5
-  Clapper: 'C', // 7
+  Bubbler: 'G',
+  Clapper: 'G', // 7
   Jazzman: 'G', // 2
   Rgggggg: 'G', // 3
   Wailer: 'G' // 2
