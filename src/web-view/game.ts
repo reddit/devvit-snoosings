@@ -4,6 +4,7 @@ import type {
   PeerMessage,
   WebViewMessage
 } from '../shared/message.js'
+import {beatMillis} from '../shared/serial.js'
 import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import {Audio, play} from './audio/audio.js'
@@ -38,7 +39,7 @@ const heartbeatPeriodMillis: number = 9_000
 const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
-const version: number = 3
+const version: number = 4
 
 export class Game {
   static async new(): Promise<Game> {
@@ -146,7 +147,12 @@ export class Game {
           const prev = this.#players[msg.player.uuid]
           if (prev && prev.type !== 'Peer')
             throw Error('received message from self')
-          this.#players[msg.player.uuid] = await Peer(this.#assets, prev, msg)
+          this.#players[msg.player.uuid] = await Peer(
+            this.#assets,
+            prev,
+            msg,
+            utcMillisNow()
+          )
         }
         break
 
@@ -214,9 +220,9 @@ export class Game {
         updatePeer(player, lvlWH, tick)
         renderPlayer(draw.ctx, player)
         const tone = melodyGet(player.melody, beat)
-        if (tone != null && player.beat !== beat) {
+        if (tone != null && now - player.played >= beatMillis) {
           // I want this to only play once. I want to only play on the start of new measure.
-          player.beat = beat
+          player.played = now
           play(
             this.#audio.ctx,
             this.#audio.instruments[player.instrument],

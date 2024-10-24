@@ -48,6 +48,7 @@ export type Melody = string & {[melodySerial]: never}
 /** notes per melody. */
 export const melodyLen: number = 8
 export const melodyMillis: number = 4_000
+export const beatMillis: number = melodyMillis / melodyLen
 
 export const restNote: string = '-'
 export const silence: Melody = restNote.repeat(melodyLen) as Melody

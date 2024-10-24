@@ -6,6 +6,8 @@ import {
   type Melody,
   type PlayerSerial,
   type Tone,
+  beatMillis,
+  melodyMillis,
   silence
 } from '../../shared/serial.js'
 import {anonSnoovatarURL, anonUsername, noT2} from '../../shared/tid.js'
@@ -34,7 +36,7 @@ export type P1 = Player & {
 
 export type Peer = Player & {
   type: 'Peer'
-  beat: number
+  played: UTCMillis
   melody: Melody
 }
 
@@ -69,7 +71,8 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
 export async function Peer(
   assets: Readonly<Assets>,
   peer: Peer | undefined,
-  msg: PeerMessage
+  msg: PeerMessage,
+  time: UTCMillis
 ): Promise<Peer> {
   let snoovatarImg = peer?.snoovatarImg // try cache.
   if (!snoovatarImg)
@@ -79,7 +82,7 @@ export async function Peer(
       snoovatarImg = assets.anonSnoovatar
     }
   return {
-    beat: -1,
+    played: (time - (time % beatMillis)) as UTCMillis,
     type: 'Peer',
     dir: msg.player.dir,
     peered: {at: utcMillisNow(), xy: {x: msg.player.xy.x, y: msg.player.xy.y}},
@@ -104,7 +107,11 @@ export function updateP1(
   panel: Readonly<Panel>,
   time: UTCMillis
 ): void {
-  const point = !ctrl.handled && ctrl.point && ctrl.isOn('A')
+  const point =
+    !ctrl.handled &&
+    ctrl.point &&
+    ctrl.isOn('A') &&
+    (ctrl.isOnStart('A') || p1.dir.x || p1.dir.y)
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
   if (point) ctrl.handled = true
   const mag = magnitude(p1.dir) || 0

@@ -40,13 +40,7 @@ export function renderMetronome(
     const even = (i & 1) === 0
     ctx.lineWidth = 1
     const offset = wrap(
-      w / 2 +
-        -(
-          ((now - (0.5 * melodyMillis) / melodyLen) % melodyMillis) /
-          melodyMillis
-        ) *
-          w +
-        i * dividerW,
+      w / 2 + -((now % melodyMillis) / melodyMillis) * w + i * dividerW,
       0,
       w
     )
@@ -57,19 +51,7 @@ export function renderMetronome(
 
     ctx.fillStyle = 'black'
     ctx.font = `${i === beat ? '700 ' : ''}12px sans-serif`
-    // const text = `${i + 1}`
-    // const dims = ctx.measureText(text)
-    // ctx.fillText(
-    //   text,
-    //   offset + x - dims.width / 2,
-    //   y + (space + quarterSpace) + dims.actualBoundingBoxAscent
-    // )
     if (i === 0) {
-      // ctx.beginPath()
-      // const radius = 2
-      // ctx.arc(offset + x, y + (space + quarterSpace), radius, 0, 2 * Math.PI)
-      // ctx.fillStyle = 'black'
-      // ctx.fill()
       const text = '𝄞'
       const dims = ctx.measureText(text)
       ctx.fillText(
@@ -120,10 +102,4 @@ export function renderMetronome(
 const pentatonicShift = ['C', 'D', 'E', 'G', 'A'] as const
 const noteToPentatonicIndex: {
   [key in (typeof pentatonicShift)[number]]: number
-} = {
-  C: 0,
-  D: 1,
-  E: 2,
-  G: 3,
-  A: 4
-}
+} = {C: 0, D: 1, E: 2, G: 3, A: 4}

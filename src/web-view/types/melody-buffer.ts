@@ -1,7 +1,7 @@
 import {
   type Melody,
   type Tone,
-  melodyLen,
+  beatMillis,
   melodyMillis,
   restNote,
   silence
@@ -16,12 +16,16 @@ export type MelodyBuffer = {
 }
 
 export function melodyBeat(time: UTCMillis): number {
-  return Math.trunc((time % melodyMillis) / (melodyMillis / melodyLen))
+  return Math.trunc((time % melodyMillis) / beatMillis)
+}
+
+export function melodyRecordBeat(time: UTCMillis): number {
+  return Math.trunc(((time + beatMillis / 2) % melodyMillis) / beatMillis)
 }
 
 /** when to send the stale buffer. */
 export function isMelodyStart(time: UTCMillis): boolean {
-  return time % melodyMillis < melodyMillis / melodyLen
+  return time % melodyMillis < beatMillis
 }
 
 export function MelodyBuffer(): MelodyBuffer {
@@ -35,10 +39,12 @@ export function MelodyBuffer(): MelodyBuffer {
 
 /** call every frame before reading or writing to the buffer. */
 export function melodyFlip(buf: MelodyBuffer, time: UTCMillis): void {
-  if (time - buf.flipped >= melodyMillis) {
+  if (time + beatMillis / 2 - buf.flipped >= melodyMillis) {
     buf.write = buf.write === 'back' ? 'front' : 'back'
     buf[buf.write] = silence
-    buf.flipped = (time - (time % melodyMillis)) as UTCMillis
+    buf.flipped = (time +
+      beatMillis / 2 -
+      ((time + beatMillis / 2) % melodyMillis)) as UTCMillis
   }
 }
 
@@ -47,7 +53,7 @@ export function melodyBufferPut(
   tone: Tone,
   time: UTCMillis
 ): void {
-  const beat = melodyBeat(time)
+  const beat = melodyRecordBeat(time)
   buf[buf.write] = (buf[buf.write].slice(0, beat) +
     encodeTone(tone) +
     buf[buf.write].slice(beat + 1)) as Melody

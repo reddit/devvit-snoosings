@@ -17,21 +17,18 @@ export function updatePanel(
 ): void {
   if (ctrl.handled) return
   const {x, y} = xy(ctx)
-  ctrl.handled = boxHits(
-    {x, y, w: ctx.canvas.width, h: panelH},
-    ctrl.clientPoint
-  )
 
   if (
     !ctrl.isOn('A') ||
     // the initial click must be inside the button.
     (panel.tone == null && !ctrl.isOnStart('A')) ||
-    !ctrl.handled
+    !boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
   ) {
     panel.tone = undefined
     return
   }
 
+  ctrl.handled = true
   const fifth = ctx.canvas.width / 5
   const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as Tone
   panel.tone = ctrl.isOnStart('A') || panel.tone !== tone ? tone : undefined
