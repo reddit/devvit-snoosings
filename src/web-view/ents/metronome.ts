@@ -1,9 +1,5 @@
 import {wrap} from '../../shared/math.js'
-import {
-  formattedInstrumentNote,
-  melodyLen,
-  melodyMillis
-} from '../../shared/serial.js'
+import {melodyLen, melodyMillis} from '../../shared/serial.js'
 import {
   melodyBeat,
   melodyBufferPeek,
@@ -70,17 +66,7 @@ export function renderMetronome(
           : melodyBufferRead(p1.melody)
       const tone = melodyGet(melody, i) // base note is what I have, I get back 0-4
       if (tone != null) {
-        const shift =
-          pentatonicShift[
-            (noteToPentatonicIndex[
-              formattedInstrumentNote[
-                p1.instrument
-              ] as (typeof pentatonicShift)[number]
-            ] +
-              tone) %
-              pentatonicShift.length
-          ]!
-        const text = shift
+        const text = '·' //fix me. should be a mapping of 'sing!' to colored shape.
         const dims = ctx.measureText(text)
         ctx.fillText(
           text,
@@ -98,8 +84,3 @@ export function renderMetronome(
   ctx.lineTo(x + offset, y + 24)
   ctx.stroke()
 }
-
-const pentatonicShift = ['C', 'D', 'E', 'G', 'A'] as const
-const noteToPentatonicIndex: {
-  [key in (typeof pentatonicShift)[number]]: number
-} = {C: 0, D: 1, E: 2, G: 3, A: 4}

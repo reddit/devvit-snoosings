@@ -30,14 +30,6 @@ export type Instrument =
   | 'Rgggggg'
   | 'Wailer'
 
-export const formattedInstrumentNote: {[instrument in Instrument]: string} = {
-  Bubbler: 'G',
-  Clapper: 'G', // 7
-  Jazzman: 'G', // 2
-  Rgggggg: 'G', // 3
-  Wailer: 'G' // 2
-}
-
 declare const melodySerial: unique symbol
 /**
  * eight beats representing a four-second phrase. each character is a note
