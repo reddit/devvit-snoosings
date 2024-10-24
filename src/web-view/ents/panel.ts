@@ -2,12 +2,12 @@ import {type XY, boxHits} from '../../shared/2d.js'
 import type {Tone} from '../../shared/serial.js'
 import type {Button, Input} from '../input/input.js'
 
-export type Panel = {tone: Tone | undefined}
+export type Panel = {hit: boolean; tone: Tone | undefined}
 
 export const panelH: number = 128
 
 export function Panel(): Panel {
-  return {tone: undefined}
+  return {hit: false, tone: undefined}
 }
 
 export function updatePanel(
@@ -18,20 +18,25 @@ export function updatePanel(
   if (ctrl.handled) return
   const {x, y} = xy(ctx)
 
+  const hit =
+    ctrl.isOn('A') &&
+    boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
+  ctrl.handled = hit && ctrl.isOnStart('A')
+  if (!hit) panel.hit = false
   if (
-    !ctrl.isOn('A') ||
+    !hit ||
     // the initial click must be inside the button.
-    (panel.tone == null && !ctrl.isOnStart('A')) ||
-    !boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
+    !ctrl.handled
   ) {
+    // to-do: this is used to trigger tone on the rising edge. doesn't really
+    // seem like the right place for it though.
     panel.tone = undefined
     return
   }
 
-  ctrl.handled = true
+  panel.hit = hit
   const fifth = ctx.canvas.width / 5
-  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as Tone
-  panel.tone = ctrl.isOnStart('A') || panel.tone !== tone ? tone : undefined
+  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as Tone
 }
 
 export function renderPanel(
@@ -42,7 +47,7 @@ export function renderPanel(
 
   ctx.lineWidth = 2
   ctx.strokeStyle = 'brown'
-  ctx.fillStyle = panel.tone != null ? 'yellowgreen' : 'grey'
+  ctx.fillStyle = panel.hit ? 'yellowgreen' : 'grey'
   ctx.beginPath()
   ctx.roundRect(
     x + ctx.lineWidth,

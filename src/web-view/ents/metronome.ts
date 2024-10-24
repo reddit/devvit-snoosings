@@ -64,7 +64,7 @@ export function renderMetronome(
         i <= beat && i > (beat - melodyLen / 2) % melodyLen
           ? melodyBufferPeek(p1.melody)
           : melodyBufferRead(p1.melody)
-      const tone = melodyGet(melody, i) // base note is what I have, I get back 0-4
+      const tone = melodyGet(melody, i)
       if (tone != null) {
         const text = '·' //fix me. should be a mapping of 'sing!' to colored shape.
         const dims = ctx.measureText(text)
