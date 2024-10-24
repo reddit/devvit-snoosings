@@ -23,7 +23,6 @@ import type {Panel} from './panel.js'
 
 // should this be PlayerSerial no omit
 export type Player = Omit<PlayerSerial, 'melody'> & {
-  peered: {at: UTCMillis; melody: Melody; xy: XY | undefined}
   snoovatarImg: HTMLImageElement
 }
 
@@ -37,6 +36,12 @@ export type Peer = Player & {
   type: 'Peer'
   played: UTCMillis
   melody: Melody
+  peered: {
+    at: UTCMillis
+    melodyAt: UTCMillis
+    melody: Melody
+    xy: XY | undefined
+  }
 }
 
 const pxPerSec: number = 30
@@ -80,13 +85,15 @@ export async function Peer(
     } catch {
       snoovatarImg = assets.anonSnoovatar
     }
+  const now = utcMillisNow()
   return {
     played: (time - (time % beatMillis)) as UTCMillis,
     type: 'Peer',
     dir: msg.player.dir,
     peered: {
-      at: msg.player.melody === peer?.melody ? peer.peered.at : utcMillisNow(),
+      at: now,
       melody: msg.player.melody,
+      melodyAt: msg.player.melody === peer?.melody ? peer.peered.melodyAt : now,
       xy: {x: msg.player.xy.x, y: msg.player.xy.y}
     },
     flipX: msg.player.flipX,
