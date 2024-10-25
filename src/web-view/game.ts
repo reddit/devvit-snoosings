@@ -171,11 +171,10 @@ export class Game {
     draw.ctx.fillStyle = green
     draw.ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    this.#cam.x = Math.trunc(this.#p1.xy.x) - canvas.width / 2
+    this.#cam.x = this.#p1.xy.x - canvas.width / 2
     // player position is rendered at the feet. offset by half avatar height.
-    this.#cam.y = Math.trunc(
+    this.#cam.y =
       this.#p1.xy.y - snoovatarMaxWH.y / 2 - (canvas.height - panelH) / 2
-    )
     draw.ctx.save()
     draw.ctx.translate(-this.#cam.x, -this.#cam.y)
 
@@ -261,7 +260,7 @@ export class Game {
       draw.ctx.fillText(
         textConnected,
         canvas.width - dimsConnected.width - 1.25 * space,
-        space + dimsConnected.actualBoundingBoxAscent
+        space + quarterSpace + dimsConnected.actualBoundingBoxAscent
       )
 
       draw.ctx.fillStyle = 'black'
@@ -273,6 +272,7 @@ export class Game {
         text,
         canvas.width - dims.width - 1.25 * space,
         space +
+          quarterSpace +
           +(
             dimsConnected.actualBoundingBoxAscent +
             dimsConnected.actualBoundingBoxDescent

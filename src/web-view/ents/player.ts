@@ -194,7 +194,7 @@ export function renderPlayer(
   const textX = player.xy.x - dims.width / 2
 
   const top = player.xy.y + ctx.lineWidth + dims.actualBoundingBoxAscent
-  const textY = Math.trunc(top)
+  const textY = top
   ctx.strokeStyle = green // just make sure there's contrast if drawing over someone
   ctx.lineWidth = 4
   ctx.strokeText(text, textX, textY)
