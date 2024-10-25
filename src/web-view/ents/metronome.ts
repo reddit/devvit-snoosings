@@ -8,8 +8,7 @@ import {
   melodyRecordBeat
 } from '../types/melody-buffer.js'
 import type {UTCMillis} from '../types/time.js'
-import {halfSpace, quarterSpace, space} from '../utils/layout.js'
-import {panelH} from './panel.js'
+import {quarterSpace, space} from '../utils/layout.js'
 import type {P1} from './player.js'
 
 export function renderMetronome(
@@ -18,9 +17,10 @@ export function renderMetronome(
   now: UTCMillis,
   assets: Readonly<Assets>
 ): void {
-  const beat = melodyRecordBeat(now)
+  const recordBeat = melodyRecordBeat(now)
 
   const horizontalY = 638 / 2
+  const horizontalH = 11 / 2
   const w = ((481 / 2) * ctx.canvas.width) / 756
   {
     ctx.save()
@@ -36,21 +36,19 @@ export function renderMetronome(
       x - ((now % melodyMillis) / melodyMillis) * w,
       horizontalY,
       w * 2,
-      11 / 2
+      horizontalH
     )
     ctx.restore()
   }
 
   const x = (ctx.canvas.width - w) / 2
-  const h = space * 2
-  const y = ctx.canvas.height - panelH - (h + halfSpace)
 
   ctx.strokeStyle = 'black'
   const dividerW = w / melodyLen
-  for (let i = 0; i < melodyLen; i++) {
-    const even = (i & 1) === 0
+  for (let drawBeat = 0; drawBeat < melodyLen; drawBeat++) {
+    const even = (drawBeat & 1) === 0
     const offset = wrap(
-      w / 2 + -((now % melodyMillis) / melodyMillis) * w + i * dividerW,
+      w / 2 + -((now % melodyMillis) / melodyMillis) * w + drawBeat * dividerW,
       0,
       w
     )
@@ -64,7 +62,7 @@ export function renderMetronome(
       line.naturalHeight / 2
     )
 
-    if (i === 0) {
+    if (drawBeat === 0) {
       const clef = assets.images.metronomeClef
       ctx.drawImage(
         clef,
@@ -75,21 +73,31 @@ export function renderMetronome(
       )
     }
     if (
-      (i <= beat && i > (beat - melodyLen / 2) % melodyLen) ||
-      (beat < melodyLen / 2 && i > beat + melodyLen / 2)
+      (drawBeat <= recordBeat &&
+        drawBeat > (recordBeat - melodyLen / 2) % melodyLen) ||
+      (recordBeat < melodyLen / 2 && drawBeat > recordBeat + melodyLen / 2)
     ) {
-      const peek = i <= beat && i > (beat - melodyLen / 2) % melodyLen
+      const peek =
+        drawBeat <= recordBeat &&
+        drawBeat > (recordBeat - melodyLen / 2) % melodyLen
       const melody = peek
         ? melodyBufferPeek(p1.melody)
         : melodyBufferRead(p1.melody)
-      const tone = melodyGet(melody, i)
+      const tone = melodyGet(melody, drawBeat)
       if (tone != null) {
-        const text = '·' //fix me. should be a mapping of 'sing!' to colored shape.
-        const dims = ctx.measureText(text)
-        ctx.fillText(
-          text,
-          offset + x - dims.width / 2,
-          y - (space + quarterSpace)
+        const btn = [
+          assets.images.buttonS,
+          assets.images.buttonI,
+          assets.images.buttonN,
+          assets.images.buttonG,
+          assets.images.buttonBang
+        ][tone]!
+        ctx.drawImage(
+          btn,
+          offset + x - btn.naturalWidth / 64,
+          horizontalY - horizontalH - space,
+          btn.naturalWidth / 32,
+          btn.naturalHeight / 32
         )
       }
     }

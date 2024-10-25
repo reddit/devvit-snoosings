@@ -13,7 +13,7 @@ export type Panel = {
 }
 
 export const panelH: number = 168
-const buttonH = 168
+const buttonH: number = 168
 
 export function Panel(): Panel {
   return {hit: undefined, prevTone: undefined, tone: undefined}

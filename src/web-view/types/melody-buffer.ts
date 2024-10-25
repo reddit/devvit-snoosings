@@ -19,6 +19,7 @@ export function melodyBeat(time: UTCMillis): number {
   return Math.trunc((time % melodyMillis) / beatMillis)
 }
 
+/** returns 0-4. */
 export function melodyGet(melody: Melody, beat: number): Tone | undefined {
   return melodyDecode(melody, beat)
 }
