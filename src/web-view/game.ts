@@ -179,11 +179,19 @@ export class Game {
     draw.ctx.translate(-this.#cam.x, -this.#cam.y)
 
     // draw level.
-    draw.ctx.strokeStyle = 'yellow'
+    draw.ctx.strokeStyle = '#82925c'
     draw.ctx.lineWidth = 4
     draw.ctx.strokeRect(0, 0, lvlWH.x, lvlWH.y)
     draw.ctx.fillStyle = draw.data.grassPattern
     draw.ctx.fillRect(0, 0, lvlWH.x, lvlWH.y)
+
+    draw.ctx.drawImage(
+      this.#assets.images.stage,
+      lvlWH.x / 2 - this.#assets.images.stage.naturalWidth / 2,
+      lvlWH.y / 2 - this.#assets.images.stage.naturalHeight / 2,
+      this.#assets.images.stage.naturalWidth,
+      this.#assets.images.stage.naturalHeight
+    )
 
     // UI is updated first to catch any clicks.
     updatePanel(this.#panel, draw.ctx, this.#ctrl, this.#p1)

@@ -20,6 +20,7 @@ export type Assets = {
     readonly metronomeHorizontal: HTMLImageElement
     readonly metronomeUpbeat: HTMLImageElement
     p1: HTMLImageElement
+    readonly stage: HTMLImageElement
     readonly tv: HTMLImageElement
   }
 }
@@ -40,6 +41,7 @@ export async function Assets(): Promise<Assets> {
     metronomeDownbeat,
     metronomeHorizontal,
     metronomeUpbeat,
+    stage,
     tv,
     Bubbler,
     Clapper,
@@ -54,11 +56,12 @@ export async function Assets(): Promise<Assets> {
     loadImage('assets/images/button-g.webp'),
     loadImage('assets/images/button-!.webp'),
     loadImage('assets/images/cursor.webp'),
-    loadImage('assets/images/grass.png'), // to-do: webp me.
+    loadImage('assets/images/grass.webp'),
     loadImage('assets/images/metronome-clef.webp'),
     loadImage('assets/images/metronome-downbeat.webp'),
     loadImage('assets/images/metronome-horizontal.webp'),
     loadImage('assets/images/metronome-upbeat.webp'),
+    loadImage('assets/images/stage.webp'),
     loadImage('assets/images/tv.webp'),
     loadAudio('assets/audio/pop.ogg'),
     loadAudio('assets/audio/snap.ogg'),
@@ -81,6 +84,7 @@ export async function Assets(): Promise<Assets> {
       metronomeHorizontal,
       metronomeUpbeat,
       p1: anonSnoovatar,
+      stage,
       tv
     },
     audio: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer}
