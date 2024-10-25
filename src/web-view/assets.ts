@@ -4,29 +4,68 @@ import {type T2, anonSnoovatarURL, noT2} from '../shared/tid.js'
 import {loadImage} from './utils/image.js'
 
 export type Assets = {
-  readonly anonSnoovatar: HTMLImageElement
-  readonly grass: HTMLImageElement
-  readonly instruments: {readonly [instrument in Instrument]: ArrayBuffer}
+  readonly audio: {readonly [instrument in Instrument]: ArrayBuffer}
+  readonly images: {
+    readonly anonSnoovatar: HTMLImageElement
+    readonly buttonS: HTMLImageElement
+    readonly buttonI: HTMLImageElement
+    readonly buttonN: HTMLImageElement
+    readonly buttonG: HTMLImageElement
+    readonly buttonBang: HTMLImageElement
+    readonly cursor: HTMLImageElement
+    readonly grass: HTMLImageElement
+    readonly tv: HTMLImageElement
+  }
   p1: HTMLImageElement
 }
 
 export const snoovatarMaxWH: Readonly<XY> = {x: 64, y: 64}
 
 export async function Assets(): Promise<Assets> {
-  const [anonSnoovatar, grass, Bubbler, Clapper, Jazzman, Rgggggg, Wailer] =
-    await Promise.all([
-      loadImage(anonSnoovatarURL),
-      loadImage('assets/grass.png'),
-      loadAudio('assets/pop.ogg'),
-      loadAudio('assets/snap.ogg'),
-      loadAudio('assets/ba.ogg'),
-      loadAudio('assets/rg.ogg'),
-      loadAudio('assets/wa.ogg')
-    ])
-  return {
+  const [
     anonSnoovatar,
+    buttonS,
+    buttonI,
+    buttonN,
+    buttonG,
+    buttonBang,
+    cursor,
     grass,
-    instruments: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer},
+    tv,
+    Bubbler,
+    Clapper,
+    Jazzman,
+    Rgggggg,
+    Wailer
+  ] = await Promise.all([
+    loadImage(anonSnoovatarURL),
+    loadImage('assets/images/button-s.webp'),
+    loadImage('assets/images/button-i.webp'),
+    loadImage('assets/images/button-n.webp'),
+    loadImage('assets/images/button-g.webp'),
+    loadImage('assets/images/button-!.webp'),
+    loadImage('assets/images/cursor.webp'),
+    loadImage('assets/images/grass.png'), // to-do: webp me.
+    loadImage('assets/images/tv.webp'),
+    loadAudio('assets/audio/pop.ogg'),
+    loadAudio('assets/audio/snap.ogg'),
+    loadAudio('assets/audio/ba.ogg'),
+    loadAudio('assets/audio/rg.ogg'),
+    loadAudio('assets/audio/wa.ogg')
+  ])
+  return {
+    images: {
+      anonSnoovatar,
+      buttonS,
+      buttonI,
+      buttonN,
+      buttonG,
+      buttonBang,
+      cursor,
+      grass,
+      tv
+    },
+    audio: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer},
     p1: anonSnoovatar
   }
 }
@@ -36,7 +75,7 @@ export async function loadSnoovatar(
   player: {snoovatarURL: string; t2: T2}
 ): Promise<HTMLImageElement> {
   return player.t2 === noT2
-    ? assets.anonSnoovatar
+    ? assets.images.anonSnoovatar
     : loadImage(player.snoovatarURL)
 }
 

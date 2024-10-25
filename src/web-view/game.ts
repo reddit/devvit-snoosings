@@ -28,7 +28,7 @@ import {
   melodyGet
 } from './types/melody-buffer.js'
 import {type UTCMillis, utcMillisNow} from './types/time.js'
-import {halfSpace, quarterSpace} from './utils/layout.js'
+import {halfSpace, quarterSpace, space} from './utils/layout.js'
 import {green} from './utils/palette.js'
 import {throttle} from './utils/throttle.js'
 
@@ -39,7 +39,7 @@ const heartbeatPeriodMillis: number = 9_000
 const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
-const version: number = 4
+const version: number = 6
 
 export class Game {
   static async new(): Promise<Game> {
@@ -233,6 +233,9 @@ export class Game {
             1 -
               Math.min(lvlMag, 3 * magnitude(xySub(this.#p1.xy, player.xy))) /
                 lvlMag
+            // 1 -
+            //   Math.log10(magnitude(xySub(this.#p1.xy, player.xy)) + 1) /
+            //     Math.log10(lvlMag + 1)
           )
         }
       }
@@ -247,7 +250,7 @@ export class Game {
     if (this.#outdated) {
       draw.ctx.fillStyle = 'black'
       draw.ctx.font = '12px sans-serif'
-      draw.ctx.fillText('please reload', 10, 10)
+      draw.ctx.fillText('please reload', space, space)
     }
 
     {
@@ -258,8 +261,8 @@ export class Game {
 
       draw.ctx.fillText(
         textConnected,
-        canvas.width - dimsConnected.width - halfSpace,
-        halfSpace + dimsConnected.actualBoundingBoxAscent
+        canvas.width - dimsConnected.width - space,
+        space + dimsConnected.actualBoundingBoxAscent
       )
 
       draw.ctx.fillStyle = 'black'
@@ -269,8 +272,8 @@ export class Game {
 
       draw.ctx.fillText(
         text,
-        canvas.width - dims.width - halfSpace,
-        halfSpace +
+        canvas.width - dims.width - space,
+        space +
           +(
             dimsConnected.actualBoundingBoxAscent +
             dimsConnected.actualBoundingBoxDescent
@@ -291,7 +294,7 @@ export class Game {
       const dimsY = draw.ctx.measureText(textY)
       draw.ctx.fillText(
         textY,
-        canvas.width - dimsY.width - halfSpace,
+        canvas.width - dimsY.width - space,
         canvas.height - panelH + -halfSpace
       )
       const x = `${Math.round(this.#p1.xy.x)}`.padStart(
@@ -302,7 +305,7 @@ export class Game {
       const dimsX = draw.ctx.measureText(textX)
       draw.ctx.fillText(
         textX,
-        canvas.width - dimsX.width - halfSpace,
+        canvas.width - dimsX.width - space,
         canvas.height -
           panelH +
           -halfSpace -
@@ -311,8 +314,17 @@ export class Game {
       )
     }
 
-    renderMetronome(draw.ctx, this.#p1, now)
-    renderPanel(draw.ctx, this.#panel)
+    renderPanel(draw.ctx, this.#panel, this.#assets, this.#p1, now)
+
+    if (this.#ctrl.point && this.#ctrl.pointType === 'mouse') {
+      draw.ctx.drawImage(
+        this.#assets.images.cursor,
+        this.#ctrl.clientPoint.x - 25 / 2,
+        this.#ctrl.clientPoint.y - 3 / 2,
+        this.#assets.images.cursor.naturalWidth / 2,
+        this.#assets.images.cursor.naturalHeight / 2
+      )
+    }
   }
 
   #playerDisconnected(player: Player): void {
@@ -352,8 +364,7 @@ function Canvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   canvas.width = 0 // guarantee resize().
 
-  // to-do: make a nice cursor.
-  // canvas.style.cursor = 'none'
+  canvas.style.cursor = 'none'
   canvas.style.display = 'block' // no line height spacing.
 
   // update on each pointermove *touch* Event like *mouse* Events.

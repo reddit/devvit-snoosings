@@ -44,7 +44,7 @@ export type Peer = Player & {
   }
 }
 
-const pxPerSec: number = 30
+const pxPerSec: number = 35
 
 export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
   return {
@@ -62,7 +62,7 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     name: anonUsername,
     root: (-3 + Math.trunc(Math.random() * 8)) as Tone,
     snoovatarURL: anonSnoovatarURL,
-    snoovatarImg: assets.anonSnoovatar,
+    snoovatarImg: assets.images.anonSnoovatar,
     t2: noT2,
     uuid: crypto.randomUUID(),
     xy: {
@@ -83,7 +83,7 @@ export async function Peer(
     try {
       snoovatarImg = await loadSnoovatar(assets, msg.player)
     } catch {
-      snoovatarImg = assets.anonSnoovatar
+      snoovatarImg = assets.images.anonSnoovatar
     }
   const now = utcMillisNow()
   return {

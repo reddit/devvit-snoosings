@@ -1,13 +1,18 @@
 import {type XY, boxHits} from '../../shared/2d.js'
 import type {Tone} from '../../shared/serial.js'
+import type {Assets} from '../assets.js'
 import type {Button, Input} from '../input/input.js'
+import type {UTCMillis} from '../types/time.js'
+import {renderMetronome} from './metronome.js'
+import type {P1} from './player.js'
 
-export type Panel = {hit: boolean; tone: Tone | undefined}
+export type Panel = {hit: number | undefined; tone: Tone | undefined}
 
-export const panelH: number = 128
+export const panelH: number = 168
+const buttonH = 168
 
 export function Panel(): Panel {
-  return {hit: false, tone: undefined}
+  return {hit: undefined, tone: undefined}
 }
 
 export function updatePanel(
@@ -22,7 +27,7 @@ export function updatePanel(
     ctrl.isOn('A') &&
     boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
   ctrl.handled = hit && ctrl.isOnStart('A')
-  if (!hit) panel.hit = false
+  if (!hit) panel.hit = undefined
   if (
     !hit ||
     // the initial click must be inside the button.
@@ -34,49 +39,44 @@ export function updatePanel(
     return
   }
 
-  panel.hit = hit
   const fifth = ctx.canvas.width / 5
-  panel.tone = Math.trunc((ctrl.clientPoint.x - x) / fifth) as Tone
+  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
+  panel.hit = tone
+  panel.tone = tone as Tone
 }
 
 export function renderPanel(
   ctx: CanvasRenderingContext2D,
-  panel: Readonly<Panel>
+  panel: Readonly<Panel>,
+  assets: Readonly<Assets>,
+  p1: Readonly<P1>,
+  now: UTCMillis
 ): void {
-  const {x, y} = xy(ctx)
+  ctx.drawImage(assets.images.tv, 0, 0, ctx.canvas.width, ctx.canvas.height)
 
-  const letters = ['s', 'i', 'n', 'g', '!']
-  ctx.lineWidth = 2
-  const w = (ctx.canvas.width - ctx.lineWidth) / letters.length
+  const {x} = xy(ctx)
+
+  const letters = [
+    assets.images.buttonS,
+    assets.images.buttonI,
+    assets.images.buttonN,
+    assets.images.buttonG,
+    assets.images.buttonBang
+  ]
+  const w = ctx.canvas.width / letters.length
+  if (panel.hit != null) console.log(panel.hit)
   for (let i = 0; i < letters.length; i++) {
-    ctx.strokeStyle = 'brown'
-    ctx.fillStyle = panel.hit ? 'yellowgreen' : 'grey'
-    ctx.beginPath()
-    ctx.roundRect(
-      x + i * w + ctx.lineWidth,
-      y + ctx.lineWidth,
+    if (panel.hit === i) continue
+    ctx.drawImage(
+      letters[i]!,
+      x + i * w,
+      ctx.canvas.height - buttonH,
       w,
-      panelH - ctx.lineWidth * 2,
-      4
+      buttonH
     )
-    ctx.fill()
-    ctx.stroke()
-
-    // to-do: cache some of these measurements and such
-    ctx.fillStyle = 'black'
-    ctx.font = '700 48px sans-serif'
-    const dims = ctx.measureText(letters[i]!)
-    const textX = Math.trunc(
-      x + i * w + i * ctx.lineWidth + w / 2 - dims.width / 2
-    )
-    const top = y + ctx.lineWidth + dims.actualBoundingBoxAscent
-    const height = dims.actualBoundingBoxAscent + dims.actualBoundingBoxDescent
-    const textY = Math.trunc(top + panelH / 2 - height / 2)
-    ctx.lineWidth = 2
-    ctx.strokeStyle = 'pink'
-    ctx.strokeText(letters[i]!, textX, textY)
-    ctx.fillText(letters[i]!, textX, textY)
   }
+
+  renderMetronome(ctx, p1, now)
 }
 
 function xy(ctx: CanvasRenderingContext2D): XY {

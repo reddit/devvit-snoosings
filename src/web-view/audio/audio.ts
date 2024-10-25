@@ -9,11 +9,11 @@ export type Audio = {
 export async function Audio(assets: Readonly<Assets>): Promise<Audio> {
   const ctx = new AudioContext()
   const [Bubbler, Clapper, Jazzman, Rgggggg, Wailer] = await Promise.all([
-    ctx.decodeAudioData(assets.instruments.Bubbler),
-    ctx.decodeAudioData(assets.instruments.Clapper),
-    ctx.decodeAudioData(assets.instruments.Jazzman),
-    ctx.decodeAudioData(assets.instruments.Rgggggg),
-    ctx.decodeAudioData(assets.instruments.Wailer)
+    ctx.decodeAudioData(assets.audio.Bubbler),
+    ctx.decodeAudioData(assets.audio.Clapper),
+    ctx.decodeAudioData(assets.audio.Jazzman),
+    ctx.decodeAudioData(assets.audio.Rgggggg),
+    ctx.decodeAudioData(assets.audio.Wailer)
   ])
   return {ctx, instruments: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer}}
 }

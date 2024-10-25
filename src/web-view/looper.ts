@@ -72,7 +72,7 @@ export class Looper {
       this.canvas.getContext('2d', {alpha: false, willReadFrequently: false}) ??
       undefined
     if (!ctx) return
-    const grassPattern = ctx.createPattern(this.assets.grass, 'repeat')
+    const grassPattern = ctx.createPattern(this.assets.images.grass, 'repeat')
     if (!grassPattern) return
     return {ctx: ctx, data: {grassPattern}}
   }
