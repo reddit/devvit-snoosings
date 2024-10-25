@@ -64,7 +64,6 @@ export function renderPanel(
     assets.images.buttonBang
   ]
   const w = ctx.canvas.width / letters.length
-  if (panel.hit != null) console.log(panel.hit)
   for (let i = 0; i < letters.length; i++) {
     if (panel.hit === i) continue
     ctx.drawImage(
@@ -76,7 +75,7 @@ export function renderPanel(
     )
   }
 
-  renderMetronome(ctx, p1, now)
+  renderMetronome(ctx, p1, now, assets)
 }
 
 function xy(ctx: CanvasRenderingContext2D): XY {

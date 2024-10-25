@@ -1,10 +1,11 @@
 import {wrap} from '../../shared/math.js'
 import {melodyLen, melodyMillis} from '../../shared/serial.js'
+import type {Assets} from '../assets.js'
 import {
-  melodyBeat,
   melodyBufferPeek,
   melodyBufferRead,
-  melodyGet
+  melodyGet,
+  melodyRecordBeat
 } from '../types/melody-buffer.js'
 import type {UTCMillis} from '../types/time.js'
 import {halfSpace, quarterSpace, space} from '../utils/layout.js'
@@ -14,56 +15,73 @@ import type {P1} from './player.js'
 export function renderMetronome(
   ctx: CanvasRenderingContext2D,
   p1: P1,
-  now: UTCMillis
+  now: UTCMillis,
+  assets: Readonly<Assets>
 ): void {
-  const h = space * 2
-  const w = Math.min(256, ctx.canvas.width - 128)
+  const beat = melodyRecordBeat(now)
+
+  const horizontalY = 638 / 2
+  const w = ((481 / 2) * ctx.canvas.width) / 756
+  {
+    ctx.save()
+    const x = ((511 / 2) * ctx.canvas.width) / 756
+
+    ctx.beginPath()
+    ctx.rect(x, 0, w, ctx.canvas.height)
+    ctx.clip()
+
+    const img = assets.images.metronomeHorizontal
+    ctx.drawImage(
+      img,
+      x - ((now % melodyMillis) / melodyMillis) * w,
+      horizontalY,
+      w * 2,
+      11 / 2
+    )
+    ctx.restore()
+  }
 
   const x = (ctx.canvas.width - w) / 2
+  const h = space * 2
   const y = ctx.canvas.height - panelH - (h + halfSpace)
-  ctx.lineWidth = 2
-  ctx.strokeStyle = 'black'
-  ctx.beginPath()
-  ctx.moveTo(x, y)
-  ctx.lineTo(x + w, y)
-  ctx.stroke()
-
-  const beat = melodyBeat(now)
 
   ctx.strokeStyle = 'black'
   const dividerW = w / melodyLen
   for (let i = 0; i < melodyLen; i++) {
     const even = (i & 1) === 0
-    ctx.lineWidth = 1
     const offset = wrap(
       w / 2 + -((now % melodyMillis) / melodyMillis) * w + i * dividerW,
       0,
       w
     )
-    ctx.beginPath()
-    ctx.moveTo(offset + x, y - 8 - (even ? 8 : 0))
-    ctx.lineTo(offset + x, y + 8 + (even ? 8 : 0))
-    ctx.stroke()
 
-    ctx.fillStyle = 'black'
-    ctx.font = `${i === beat ? '700 ' : ''}12px sans-serif`
+    const line = assets.images[even ? 'metronomeDownbeat' : 'metronomeUpbeat']
+    ctx.drawImage(
+      line,
+      offset + x - line.naturalWidth / 4,
+      horizontalY - line.naturalHeight / 4,
+      line.naturalWidth / 2,
+      line.naturalHeight / 2
+    )
+
     if (i === 0) {
-      const text = '𝄞'
-      const dims = ctx.measureText(text)
-      ctx.fillText(
-        text,
-        offset + x - dims.width / 2,
-        y + space + quarterSpace + dims.actualBoundingBoxAscent
+      const clef = assets.images.metronomeClef
+      ctx.drawImage(
+        clef,
+        offset + x - clef.naturalWidth / 4,
+        horizontalY + quarterSpace,
+        clef.naturalWidth / 2,
+        clef.naturalHeight / 2
       )
     }
     if (
       (i <= beat && i > (beat - melodyLen / 2) % melodyLen) ||
       (beat < melodyLen / 2 && i > beat + melodyLen / 2)
     ) {
-      const melody =
-        i <= beat && i > (beat - melodyLen / 2) % melodyLen
-          ? melodyBufferPeek(p1.melody)
-          : melodyBufferRead(p1.melody)
+      const peek = i <= beat && i > (beat - melodyLen / 2) % melodyLen
+      const melody = peek
+        ? melodyBufferPeek(p1.melody)
+        : melodyBufferRead(p1.melody)
       const tone = melodyGet(melody, i)
       if (tone != null) {
         const text = '·' //fix me. should be a mapping of 'sing!' to colored shape.
@@ -76,11 +94,4 @@ export function renderMetronome(
       }
     }
   }
-
-  ctx.strokeStyle = 'red'
-  const offset = w / 2
-  ctx.beginPath()
-  ctx.moveTo(x + offset, y - 24)
-  ctx.lineTo(x + offset, y + 24)
-  ctx.stroke()
 }

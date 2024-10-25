@@ -6,3 +6,9 @@ snoosings is essentially a networked drum machine with a twist: if your internet
 
 ## learnings
 
+
+### networking
+
+a lot of the logic is synced to UTC millis. the idea is that you can actually with the volume on in the same room.
+
+### devvit

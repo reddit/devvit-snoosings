@@ -9,7 +9,6 @@ import type {UUID} from '../shared/uuid.js'
 import {Assets, loadSnoovatar, snoovatarMaxWH} from './assets.js'
 import {Audio, play} from './audio/audio.js'
 import {Cam} from './cam.js'
-import {renderMetronome} from './ents/metronome.js'
 import {Panel, panelH, renderPanel, updatePanel} from './ents/panel.js'
 import {
   P1,
@@ -39,7 +38,7 @@ const heartbeatPeriodMillis: number = 9_000
 const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
-const version: number = 6
+const version: number = 7
 
 export class Game {
   static async new(): Promise<Game> {
@@ -132,9 +131,9 @@ export class Game {
         this.#p1.name = msg.p1.name
         this.#p1.snoovatarURL = msg.p1.snoovatarURL
         try {
-          this.#assets.p1 = await loadSnoovatar(this.#assets, msg.p1)
+          this.#assets.images.p1 = await loadSnoovatar(this.#assets, msg.p1)
         } catch {}
-        this.#p1.snoovatarImg = this.#assets.p1
+        this.#p1.snoovatarImg = this.#assets.images.p1
         postMessage({type: 'WebViewLoaded', uuid: this.#p1.uuid})
         break
 
@@ -261,7 +260,7 @@ export class Game {
 
       draw.ctx.fillText(
         textConnected,
-        canvas.width - dimsConnected.width - space,
+        canvas.width - dimsConnected.width - 1.25 * space,
         space + dimsConnected.actualBoundingBoxAscent
       )
 
@@ -272,7 +271,7 @@ export class Game {
 
       draw.ctx.fillText(
         text,
-        canvas.width - dims.width - space,
+        canvas.width - dims.width - 1.25 * space,
         space +
           +(
             dimsConnected.actualBoundingBoxAscent +
@@ -294,7 +293,7 @@ export class Game {
       const dimsY = draw.ctx.measureText(textY)
       draw.ctx.fillText(
         textY,
-        canvas.width - dimsY.width - space,
+        canvas.width - dimsY.width - 1.25 * space,
         canvas.height - panelH + -halfSpace
       )
       const x = `${Math.round(this.#p1.xy.x)}`.padStart(
@@ -305,7 +304,7 @@ export class Game {
       const dimsX = draw.ctx.measureText(textX)
       draw.ctx.fillText(
         textX,
-        canvas.width - dimsX.width - space,
+        canvas.width - dimsX.width - 1.25 * space,
         canvas.height -
           panelH +
           -halfSpace -

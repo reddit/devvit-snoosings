@@ -14,8 +14,8 @@ import {type Assets, loadSnoovatar, snoovatarMaxWH} from '../assets.js'
 import type {Button, Input} from '../input/input.js'
 import {
   MelodyBuffer,
-  melodyBufferPut,
-  melodyFlip
+  melodyBufferFlip,
+  melodyBufferPut
 } from '../types/melody-buffer.js'
 import {type UTCMillis, utcMillisNow} from '../types/time.js'
 import {green} from '../utils/palette.js'
@@ -133,7 +133,7 @@ export function updateP1(
     p1.dir.x /= mag
     p1.dir.y /= mag
   }
-  melodyFlip(p1.melody, time)
+  melodyBufferFlip(p1.melody, time)
   if (panel.tone != null) melodyBufferPut(p1.melody, panel.tone, time)
   updatePlayer(p1, lvlWH, tick)
 }

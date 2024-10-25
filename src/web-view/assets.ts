@@ -6,6 +6,7 @@ import {loadImage} from './utils/image.js'
 export type Assets = {
   readonly audio: {readonly [instrument in Instrument]: ArrayBuffer}
   readonly images: {
+    // to-do: spritesheet.
     readonly anonSnoovatar: HTMLImageElement
     readonly buttonS: HTMLImageElement
     readonly buttonI: HTMLImageElement
@@ -14,9 +15,13 @@ export type Assets = {
     readonly buttonBang: HTMLImageElement
     readonly cursor: HTMLImageElement
     readonly grass: HTMLImageElement
+    readonly metronomeClef: HTMLImageElement
+    readonly metronomeDownbeat: HTMLImageElement
+    readonly metronomeHorizontal: HTMLImageElement
+    readonly metronomeUpbeat: HTMLImageElement
+    p1: HTMLImageElement
     readonly tv: HTMLImageElement
   }
-  p1: HTMLImageElement
 }
 
 export const snoovatarMaxWH: Readonly<XY> = {x: 64, y: 64}
@@ -31,6 +36,10 @@ export async function Assets(): Promise<Assets> {
     buttonBang,
     cursor,
     grass,
+    metronomeClef,
+    metronomeDownbeat,
+    metronomeHorizontal,
+    metronomeUpbeat,
     tv,
     Bubbler,
     Clapper,
@@ -46,6 +55,10 @@ export async function Assets(): Promise<Assets> {
     loadImage('assets/images/button-!.webp'),
     loadImage('assets/images/cursor.webp'),
     loadImage('assets/images/grass.png'), // to-do: webp me.
+    loadImage('assets/images/metronome-clef.webp'),
+    loadImage('assets/images/metronome-downbeat.webp'),
+    loadImage('assets/images/metronome-horizontal.webp'),
+    loadImage('assets/images/metronome-upbeat.webp'),
     loadImage('assets/images/tv.webp'),
     loadAudio('assets/audio/pop.ogg'),
     loadAudio('assets/audio/snap.ogg'),
@@ -63,10 +76,14 @@ export async function Assets(): Promise<Assets> {
       buttonBang,
       cursor,
       grass,
+      metronomeClef,
+      metronomeDownbeat,
+      metronomeHorizontal,
+      metronomeUpbeat,
+      p1: anonSnoovatar,
       tv
     },
-    audio: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer},
-    p1: anonSnoovatar
+    audio: {Bubbler, Clapper, Jazzman, Rgggggg, Wailer}
   }
 }
 

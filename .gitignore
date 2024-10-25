@@ -3,4 +3,4 @@
 /webroot/index.js
 
 # audacity temporary files.
-*.aup3-wal
+/art/audio/*.aup3-wal

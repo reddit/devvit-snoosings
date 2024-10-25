@@ -19,6 +19,10 @@ export function melodyBeat(time: UTCMillis): number {
   return Math.trunc((time % melodyMillis) / beatMillis)
 }
 
+export function melodyGet(melody: Melody, beat: number): Tone | undefined {
+  return melodyDecode(melody, beat)
+}
+
 export function melodyRecordBeat(time: UTCMillis): number {
   return Math.trunc(((time + beatMillis / 2) % melodyMillis) / beatMillis)
 }
@@ -38,7 +42,7 @@ export function MelodyBuffer(): MelodyBuffer {
 }
 
 /** call every frame before reading or writing to the buffer. */
-export function melodyFlip(buf: MelodyBuffer, time: UTCMillis): void {
+export function melodyBufferFlip(buf: MelodyBuffer, time: UTCMillis): void {
   if (time + beatMillis / 2 - buf.flipped >= melodyMillis) {
     buf.write = buf.write === 'back' ? 'front' : 'back'
     buf[buf.write] = silence
@@ -66,10 +70,6 @@ export function melodyBufferRead(buf: Readonly<MelodyBuffer>): Melody {
 
 export function melodyBufferPeek(buf: Readonly<MelodyBuffer>): Melody {
   return buf.write === 'back' ? buf.back : buf.front
-}
-
-export function melodyGet(melody: Melody, beat: number): Tone | undefined {
-  return melodyDecode(melody, beat)
 }
 
 function encodeTone(tone: Tone | undefined): string {

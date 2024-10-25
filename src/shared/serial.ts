@@ -21,6 +21,8 @@ export type PlayerSerial = {
   uuid: UUID
   /** player position. */
   xy: XY
+  // to-do: report player device and show it under their avatar to make folks
+  // feel more connected.
 }
 
 export type Instrument =
@@ -37,7 +39,7 @@ declare const melodySerial: unique symbol
  */
 export type Melody = string & {[melodySerial]: never}
 
-/** notes per melody. */
+/** beats per melody. */
 export const melodyLen: number = 8
 export const melodyMillis: number = 4_000
 export const beatMillis: number = melodyMillis / melodyLen
