@@ -237,11 +237,8 @@ export class Game {
             this.#audio.instruments[player.instrument],
             player.root + tone,
             1 -
-              Math.min(lvlMag, 3 * magnitude(xySub(this.#p1.xy, player.xy))) /
-                lvlMag
-            // 1 -
-            //   Math.log10(magnitude(xySub(this.#p1.xy, player.xy)) + 1) /
-            //     Math.log10(lvlMag + 1)
+              Math.log10(magnitude(xySub(this.#p1.xy, player.xy)) + 1) /
+                Math.log10(lvlMag + 1)
           )
         }
       }
