@@ -187,7 +187,7 @@ export class Game {
     draw.ctx.fillRect(0, 0, lvlWH.x, lvlWH.y)
 
     // UI is updated first to catch any clicks.
-    updatePanel(this.#panel, draw.ctx, this.#ctrl)
+    updatePanel(this.#panel, draw.ctx, this.#ctrl, this.#p1)
 
     updateP1(this.#p1, this.#ctrl, lvlWH, tick, this.#panel, now)
 

@@ -6,19 +6,24 @@ import type {UTCMillis} from '../types/time.js'
 import {renderMetronome} from './metronome.js'
 import type {P1} from './player.js'
 
-export type Panel = {hit: number | undefined; tone: Tone | undefined}
+export type Panel = {
+  hit: number | undefined
+  prevTone: Tone | undefined
+  tone: Tone | undefined
+}
 
 export const panelH: number = 168
 const buttonH = 168
 
 export function Panel(): Panel {
-  return {hit: undefined, tone: undefined}
+  return {hit: undefined, prevTone: undefined, tone: undefined}
 }
 
 export function updatePanel(
   panel: Panel,
   ctx: CanvasRenderingContext2D,
-  ctrl: Input<Button>
+  ctrl: Input<Button>,
+  p1: Readonly<P1>
 ): void {
   if (ctrl.handled) return
   const {x, y} = xy(ctx)
@@ -26,7 +31,12 @@ export function updatePanel(
   const hit =
     ctrl.isOn('A') &&
     boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
-  ctrl.handled = hit && ctrl.isOnStart('A')
+  const fifth = ctx.canvas.width / 5
+  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
+  ctrl.handled =
+    hit &&
+    (ctrl.isOnStart('A') ||
+      (panel.prevTone !== tone && p1.dir.x === 0 && p1.dir.y === 0))
   if (!hit) panel.hit = undefined
   if (
     !hit ||
@@ -39,10 +49,9 @@ export function updatePanel(
     return
   }
 
-  const fifth = ctx.canvas.width / 5
-  const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
   panel.hit = tone
   panel.tone = tone as Tone
+  panel.prevTone = panel.tone
 }
 
 export function renderPanel(
