@@ -100,8 +100,14 @@ export class Looper {
     this.age += this.tick
     const loop = this.#loop
     this.#loop = undefined
-    this.canvas.width = innerWidth
-    this.canvas.height = innerHeight
+    if (
+      this.canvas.width !== innerWidth ||
+      this.canvas.height !== innerHeight
+    ) {
+      this.canvas.width = innerWidth
+      this.canvas.height = innerHeight
+      this.canvas.focus() // hack: propagate key events.
+    }
     this.#cam.resize()
     this.#ctrl.poll(this.tick)
     loop?.()

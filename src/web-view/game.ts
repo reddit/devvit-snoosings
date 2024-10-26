@@ -74,7 +74,12 @@ export class Game {
 
     this.#cam = new Cam()
     this.#ctrl = new Input(this.#cam, canvas)
-    this.#ctrl.mapClick('A', 1)
+    this.#ctrl.mapClick('Click', 1)
+    this.#ctrl.mapKey('S', 'S', 's', 'Z', 'z')
+    this.#ctrl.mapKey('I', 'I', 'i', 'X', 'x')
+    this.#ctrl.mapKey('N', 'N', 'n', 'C', 'c')
+    this.#ctrl.mapKey('G', 'G', 'g', 'V', 'v')
+    this.#ctrl.mapKey('!', '!', '1', 'B', 'b')
 
     this.#looper = new Looper(this.#assets, canvas, this.#cam, this.#ctrl)
   }
@@ -86,7 +91,11 @@ export class Game {
   }
 
   #onLoop = async (): Promise<void> => {
-    if (this.#ctrl.isOffStart('A') && this.#audio.ctx.state !== 'running')
+    if (
+      this.#ctrl.isOffStart('Click') ||
+      (this.#ctrl.isAnyStart('S', 'I', 'N', 'G', '!') &&
+        this.#audio.ctx.state !== 'running')
+    )
       await this.#audio.ctx.resume()
     this.#update()
 
@@ -370,6 +379,8 @@ function Canvas(): HTMLCanvasElement {
 
   canvas.style.cursor = 'none'
   canvas.style.display = 'block' // no line height spacing.
+
+  canvas.tabIndex = 0 // hack: propagate key events.
 
   // update on each pointermove *touch* Event like *mouse* Events.
   canvas.style.touchAction = 'none'

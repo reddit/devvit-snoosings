@@ -1,6 +1,8 @@
 experiment with large groups of instruments. do the sounds scale well?
 re-record snap, maybe pop, maybe wa.
 enable multi-touch so phone usage is easier.
+when the player and cursor touch, another click is required to resume travel.
+enable cursor key support.
 when on desktop, show keyboard shortcuts.
 when a magic bubble hits player or two players tag, swap instruments.
 when a magic spotlight hits player, perform solo.

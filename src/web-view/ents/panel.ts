@@ -25,17 +25,27 @@ export function updatePanel(
   ctrl: Input<Button>,
   p1: Readonly<P1>
 ): void {
+  // to-do: multi-press.
+  const keys = ['S', 'I', 'N', 'G', '!'] as const
+  for (const [tone, key] of keys.entries())
+    if (ctrl.isOnStart(key)) {
+      panel.hit = tone
+      panel.tone = tone as Tone
+      panel.prevTone = panel.tone
+      return
+    }
+
   if (ctrl.handled) return
   const {x, y} = xy(ctx)
 
   const hit =
-    ctrl.isOn('A') &&
+    ctrl.isOn('Click') &&
     boxHits({x, y, w: ctx.canvas.width, h: panelH}, ctrl.clientPoint)
   const fifth = ctx.canvas.width / 5
   const tone = Math.trunc((ctrl.clientPoint.x - x) / fifth)
   ctrl.handled =
     hit &&
-    (ctrl.isOnStart('A') ||
+    (ctrl.isOnStart('Click') ||
       (panel.prevTone !== tone && p1.dir.x === 0 && p1.dir.y === 0))
   if (!hit) panel.hit = undefined
   if (

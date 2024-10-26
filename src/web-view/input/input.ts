@@ -1,11 +1,12 @@
 import type {XY} from '../../shared/2d.js'
 import type {Cam} from '../cam.js'
+import {KeyPoller} from './key-poller.js'
 import {PointerPoller} from './pointer-poller.js'
 
-export type Button = 'A'
+export type Button = 'Click' | 'S' | 'I' | 'N' | 'G' | '!'
 
 export class Input<T extends string> {
-  /** user hint as to whether to consider input or not. */
+  /** user hint as to whether to consider pointer input or not. */
   handled: boolean = false
   /** the minimum duration in milliseconds for an input to be considered held. */
   minHeld: number = 300
@@ -15,6 +16,7 @@ export class Input<T extends string> {
 
   /** the time in milliseconds since the input changed. */
   #duration: number = 0
+  readonly #keyboard: KeyPoller = new KeyPoller()
   readonly #pointer: PointerPoller
   /** prior button samples. index 0 is current loop. */
   readonly #prevBits: [number, number] = [0, 0]
@@ -62,6 +64,11 @@ export class Input<T extends string> {
     for (const click of clicks) this.#pointer.map(click, this.#map(button))
   }
 
+  /** @arg keys union of case-sensitive KeyboardEvent.key. */
+  mapKey(button: T, ...keys: readonly string[]): void {
+    for (const key of keys) this.#keyboard.map(key, this.#map(button))
+  }
+
   get point(): Readonly<XY> | undefined {
     return this.#pointer.xy
   }
@@ -84,16 +91,18 @@ export class Input<T extends string> {
   }
 
   register(op: 'add' | 'remove'): void {
+    this.#keyboard.register(op)
     this.#pointer.register(op)
   }
 
   reset(): void {
     this.handled = false
+    this.#keyboard.reset()
     this.#pointer.reset()
   }
 
   get #bits(): number {
-    return this.#pointer.bits
+    return this.#keyboard.bits | this.#pointer.bits
   }
 
   #buttonsToBits(buttons: readonly T[]): number {

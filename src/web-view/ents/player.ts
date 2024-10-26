@@ -121,8 +121,8 @@ export function updateP1(
   const point =
     !ctrl.handled &&
     ctrl.point &&
-    ctrl.isOn('A') &&
-    (ctrl.isOnStart('A') || p1.dir.x || p1.dir.y)
+    ctrl.isOn('Click') &&
+    (ctrl.isOnStart('Click') || p1.dir.x || p1.dir.y)
   p1.dir = point ? xySub(ctrl.point, p1.xy) : {x: 0, y: 0}
   if (point) ctrl.handled = true
   const mag = magnitude(p1.dir) || 0
