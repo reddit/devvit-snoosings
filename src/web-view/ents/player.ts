@@ -15,9 +15,11 @@ import type {Button, Input} from '../input/input.js'
 import {
   MelodyBuffer,
   melodyBufferFlip,
-  melodyBufferPut
+  melodyBufferPut,
+  melodyMetronomeBuffer
 } from '../types/melody-buffer.js'
 import {type UTCMillis, utcMillisNow} from '../types/time.js'
+import {quarterSpace} from '../utils/layout.js'
 import {green} from '../utils/palette.js'
 import type {Panel} from './panel.js'
 
@@ -158,7 +160,9 @@ export function updatePeer(
 
 export function renderPlayer(
   ctx: CanvasRenderingContext2D,
-  player: Readonly<Player>
+  player: Readonly<Player & {melody: Melody | MelodyBuffer}>,
+  assets: Readonly<Assets>,
+  time: UTCMillis
 ): void {
   if (player.snoovatarImg.naturalWidth && player.snoovatarImg.naturalHeight) {
     const scale = snoovatarMaxWH.y / player.snoovatarImg.naturalHeight
@@ -185,7 +189,32 @@ export function renderPlayer(
     ctx.fill()
   }
 
-  // i think this should be like in the bottom bar where you beat your bk chest
+  const melody =
+    typeof player.melody === 'string'
+      ? player.melody
+      : melodyMetronomeBuffer(player.melody, time)
+  if (melody !== silence) {
+    const tone = {
+      Bubbler: assets.images.tonePop,
+      Clapper: assets.images.toneSnap,
+      Jazzman: assets.images.toneBa,
+      Rgggggg: assets.images.toneRg,
+      Wailer: assets.images.toneWa
+    }[player.instrument]
+    ctx.save()
+    const maxAngle = (10 * Math.PI) / 180
+    const angle = maxAngle * Math.sin(time * 0.003)
+    ctx.translate(player.xy.x, player.xy.y)
+    ctx.rotate(angle)
+    ctx.drawImage(
+      tone,
+      -tone.naturalWidth / 8,
+      -snoovatarMaxWH.y - tone.naturalHeight / 4 - quarterSpace,
+      tone.naturalWidth / 4,
+      tone.naturalHeight / 4
+    )
+    ctx.restore()
+  }
 
   ctx.fillStyle = 'black'
   ctx.font = '12px sans-serif'

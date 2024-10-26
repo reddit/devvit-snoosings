@@ -2,6 +2,7 @@ import {clamp, closeTo, lerp} from './math.js'
 
 /** rectangle. empty is zero width or height. */
 export type Box = XY & WH
+// to-do: maybe it is worth exporting WH for areas instead of XY everywhere.
 type WH = {w: number; h: number}
 export type XY = {x: number; y: number}
 

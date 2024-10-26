@@ -33,6 +33,15 @@ export function isMelodyStart(time: UTCMillis): boolean {
   return time % melodyMillis < beatMillis
 }
 
+export function melodyMetronomeBuffer(
+  buf: Readonly<MelodyBuffer>,
+  time: UTCMillis
+): Melody {
+  if (time % melodyMillis >= melodyMillis - beatMillis / 2)
+    return melodyBufferRead(buf)
+  return melodyBufferPeek(buf)
+}
+
 export function MelodyBuffer(): MelodyBuffer {
   return {
     flipped: 0 as UTCMillis,

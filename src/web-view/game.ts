@@ -236,7 +236,7 @@ export class Game {
         }
 
         updatePeer(player, lvlWH, tick, isNewMelodyStart)
-        renderPlayer(draw.ctx, player)
+        renderPlayer(draw.ctx, player, this.#assets, now)
         const tone = melodyGet(player.melody, beat)
         if (tone != null && now - player.played >= beatMillis) {
           // I want this to only play once. I want to only play on the start of new measure.
@@ -253,7 +253,7 @@ export class Game {
       }
 
     // render p1 last so they're always on top.
-    renderPlayer(draw.ctx, this.#p1)
+    renderPlayer(draw.ctx, this.#p1, this.#assets, now)
 
     draw.ctx.restore()
 
