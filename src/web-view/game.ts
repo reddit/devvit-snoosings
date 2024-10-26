@@ -1,8 +1,9 @@
 import {type XY, angleBetween, magnitude, xySub} from '../shared/2d.js'
-import type {
-  AppMessage,
-  PeerMessage,
-  WebViewMessage
+import {
+  type AppMessage,
+  type PeerMessage,
+  type WebViewMessage,
+  msgVersion
 } from '../shared/message.js'
 import {beatMillis} from '../shared/serial.js'
 import type {UUID} from '../shared/uuid.js'
@@ -38,11 +39,9 @@ const heartbeatPeriodMillis: number = 9_000
 const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
-const version: number = 7
-
 export class Game {
   static async new(): Promise<Game> {
-    console.log(`snoosings v0.0.${version}`)
+    console.log(`snoosings v0.0.${msgVersion}`)
     // don't bother running if the base assets cannot load.
     const assets = await Assets()
     const audio = await Audio(assets)
@@ -148,8 +147,8 @@ export class Game {
 
       case 'PeerUpdate':
         {
-          if (msg.version !== version) {
-            this.#outdated ||= msg.version > version
+          if (msg.version !== msgVersion) {
+            this.#outdated ||= msg.version > msgVersion
             break
           }
           if (this.#debug) console.log('on peer update')
@@ -368,7 +367,7 @@ export class Game {
         xy: this.#p1.xy
       },
       type: 'PeerUpdate',
-      version
+      version: msgVersion
     })
   }, peerThrottleMillis)
 }
