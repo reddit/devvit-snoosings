@@ -15,7 +15,7 @@
     "node": ">=22.6"
   },
   "license": "BSD-3-Clause",
-  "name": "snntest20241016a",
+  "name": "snoosings",
   "scripts": {
     "build:web": "esbuild --bundle --format=esm --log-level=warning --outfile=webroot/index.js src/web-view/index.ts",
     "clean": "rm -rf dist webroot/index.js",
