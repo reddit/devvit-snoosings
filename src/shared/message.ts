@@ -50,4 +50,4 @@ export type WebViewMessage = {type: 'WebViewLoaded'; uuid: UUID} | PeerMessage
  * the transmitted and expected message version. messages not at a matching
  * version should be ignored if it contains schema breaking changes.
  */
-export const msgVersion: number = 7
+export const msgVersion: number = 8
