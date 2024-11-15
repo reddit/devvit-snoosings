@@ -3,16 +3,7 @@ import type {T2} from './tid.js'
 import type {UUID} from './uuid.js'
 
 /** a window message from the app to the web view. */
-export type AppMessage = {
-  /**
-   * hack: every app render posts a message. the ID allows the web view to
-   * ignore previously sent messages.
-   */
-  id: number
-} & NoIDAppMessage
-
-// hack: Omit<AppMessage, 'id'> was breaking.
-export type NoIDAppMessage =
+export type DevvitMessage =
   | {type: 'Connected'}
   | {type: 'Disconnected'}
   /**

@@ -1,6 +1,6 @@
 import {type XY, angleBetween, magnitude, xySub} from '../shared/2d.js'
 import {
-  type AppMessage,
+  type DevvitMessage,
   type PeerMessage,
   type WebViewMessage,
   msgVersion
@@ -40,21 +40,13 @@ const peerThrottleMillis: number = 300
 const disconnectMillis: number = 30_000
 
 export class Game {
-  static async new(): Promise<Game> {
-    console.log(`snoosings v0.0.${msgVersion}`)
-    // don't bother running if the base assets cannot load.
-    const assets = await Assets()
-    const audio = await Audio(assets)
-    return new Game(assets, audio)
-  }
-
-  #assets: Assets
-  #audio: Audio
+  #assets: Assets | undefined
+  #audio: Audio | undefined
   #cam: Cam
+  #canvas: HTMLCanvasElement
   #ctrl: Input<Button>
   #debug: boolean = false
-  #looper: Looper
-  #msgID: number = -1 // initialized to 0 in app.
+  #looper: Looper | undefined
   #p1: P1
   #panel: Panel = Panel()
   /** connected peers and possibly p1. */
@@ -62,34 +54,43 @@ export class Game {
   #prevBeat: number = 0
   #outdated: boolean = false
 
-  private constructor(assets: Assets, audio: Audio) {
-    this.#assets = assets
-    this.#audio = audio
-    this.#p1 = P1(assets, lvlWH)
+  constructor() {
+    this.#p1 = P1(lvlWH)
 
-    const canvas = Canvas()
+    this.#canvas = Canvas()
 
-    initDoc(canvas)
+    initDoc(this.#canvas)
 
     this.#cam = new Cam()
-    this.#ctrl = new Input(this.#cam, canvas)
+    this.#ctrl = new Input(this.#cam, this.#canvas)
     this.#ctrl.mapClick('Click', 1)
     this.#ctrl.mapKey('S', 'S', 's', 'Z', 'z')
     this.#ctrl.mapKey('I', 'I', 'i', 'X', 'x')
     this.#ctrl.mapKey('N', 'N', 'n', 'C', 'c')
     this.#ctrl.mapKey('G', 'G', 'g', 'V', 'v')
     this.#ctrl.mapKey('!', '!', '1', 'B', 'b')
-
-    this.#looper = new Looper(this.#assets, canvas, this.#cam, this.#ctrl)
   }
 
-  start(): void {
+  async start(): Promise<void> {
     addEventListener('message', this.#onMsg)
+
+    console.log(`snoosings v0.0.${msgVersion}`)
+    // don't bother running if the base assets cannot load.
+    this.#assets = await Assets()
+    this.#audio = await Audio(this.#assets)
+
+    try {
+      this.#assets.images.p1 = await loadSnoovatar(this.#assets, this.#p1)
+    } catch {}
+    this.#p1.snoovatarImg = this.#assets.images.p1
+
+    this.#looper = new Looper(this.#assets, this.#canvas, this.#cam, this.#ctrl)
     this.#looper.register('add')
     this.#looper.loop = this.#onLoop
   }
 
   #onLoop = async (): Promise<void> => {
+    if (!this.#audio || !this.#looper) return
     if (
       this.#ctrl.isOffStart('Click') ||
       (this.#ctrl.isAnyStart('S', 'I', 'N', 'G', '!') &&
@@ -106,22 +107,18 @@ export class Game {
   }
 
   #onMsg = async (
-    ev: MessageEvent<
-      {type: 'stateUpdate'; data: AppMessage} | {type: undefined}
-    >
+    ev: MessageEvent<{type?: 'devvit-message'; data: {message: DevvitMessage}}>
   ): Promise<void> => {
-    if (ev.data.type !== 'stateUpdate') return // hack: filter unknown messages.
+    // hack: filter unknown messages.
+    if (ev.data.type !== 'devvit-message') return
 
-    let msg: AppMessage | PeerMessage = ev.data.data
-
-    // hack: filter repeat messages.
-    if (msg.id <= this.#msgID) return
-    this.#msgID = msg.id
+    let msg: DevvitMessage | PeerMessage = ev.data.data.message
 
     // unwrap peer messages into standard messages once ID check is done.
     if (msg.type === 'Peer') msg = msg.msg
 
-    // if (this.#debug) console.log(`Game.#onMsg=${JSON.stringify(msg)}`)
+    if (this.#debug || ('debug' in msg && msg.debug))
+      console.log(`web view received msg=${JSON.stringify(msg)}`)
 
     switch (msg.type) {
       case 'Connected':
@@ -138,10 +135,12 @@ export class Game {
         this.#p1.t2 = msg.p1.t2
         this.#p1.name = msg.p1.name
         this.#p1.snoovatarURL = msg.p1.snoovatarURL
-        try {
-          this.#assets.images.p1 = await loadSnoovatar(this.#assets, msg.p1)
-        } catch {}
-        this.#p1.snoovatarImg = this.#assets.images.p1
+        if (this.#assets) {
+          try {
+            this.#assets.images.p1 = await loadSnoovatar(this.#assets, msg.p1)
+          } catch {}
+          this.#p1.snoovatarImg = this.#assets.images.p1
+        }
         postMessage({type: 'WebViewLoaded', uuid: this.#p1.uuid})
         break
 
@@ -155,12 +154,13 @@ export class Game {
           const prev = this.#players[msg.player.uuid]
           if (prev && prev.type !== 'Peer')
             throw Error('received message from self')
-          this.#players[msg.player.uuid] = await Peer(
-            this.#assets,
-            prev,
-            msg,
-            utcMillisNow()
-          )
+          if (this.#assets)
+            this.#players[msg.player.uuid] = await Peer(
+              this.#assets,
+              prev,
+              msg,
+              utcMillisNow()
+            )
         }
         break
 
@@ -170,6 +170,8 @@ export class Game {
   }
 
   #update(): void {
+    // to-do: rework state to account for constructed vs loaded.
+    if (!this.#assets || !this.#audio || !this.#looper) return
     const {canvas, draw, tick} = this.#looper
     if (!draw) return
 

@@ -25,7 +25,7 @@ import type {Panel} from './panel.js'
 
 // should this be PlayerSerial no omit
 export type Player = Omit<PlayerSerial, 'melody'> & {
-  snoovatarImg: HTMLImageElement
+  snoovatarImg?: HTMLImageElement
 }
 
 export type P1 = Player & {
@@ -48,7 +48,7 @@ export type Peer = Player & {
 
 const pxPerSec: number = 35
 
-export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
+export function P1(lvlWH: Readonly<XY>): P1 {
   return {
     type: 'P1',
     dir: {x: 0, y: 0},
@@ -64,7 +64,6 @@ export function P1(assets: Readonly<Assets>, lvlWH: Readonly<XY>): P1 {
     name: anonUsername,
     root: (-3 + Math.trunc(Math.random() * 8)) as Tone,
     snoovatarURL: anonSnoovatarURL,
-    snoovatarImg: assets.images.anonSnoovatar,
     t2: noT2,
     uuid: crypto.randomUUID(),
     xy: {
@@ -164,7 +163,7 @@ export function renderPlayer(
   assets: Readonly<Assets>,
   time: UTCMillis
 ): void {
-  if (player.snoovatarImg.naturalWidth && player.snoovatarImg.naturalHeight) {
+  if (player.snoovatarImg?.naturalWidth && player.snoovatarImg.naturalHeight) {
     const scale = snoovatarMaxWH.y / player.snoovatarImg.naturalHeight
     const scaledWH = {
       w: player.snoovatarImg.naturalWidth * scale,

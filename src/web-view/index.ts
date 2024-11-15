@@ -1,4 +1,4 @@
 import {Game} from './game.js'
 
-const game = await Game.new()
-game.start()
+const game = new Game()
+await game.start()
